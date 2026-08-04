@@ -150,24 +150,22 @@ export function PeriodFilter({
         ))}
       </div>
 
-      <div className="period-range">
-        <div
-          className="period-chips"
-          role="group"
-          aria-label="Időszak a tartományon belül"
-        >
-          {WITHIN_PRESETS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`period-chip${within === item.id ? " is-active" : ""}`}
-              aria-pressed={within === item.id}
-              onClick={() => onWithinChange(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
+      <div
+        className="period-chips"
+        role="group"
+        aria-label="Időszak a tartományon belül"
+      >
+        {WITHIN_PRESETS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={`period-chip${within === item.id ? " is-active" : ""}`}
+            aria-pressed={within === item.id}
+            onClick={() => onWithinChange(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
 
       {within === "1d" ? (

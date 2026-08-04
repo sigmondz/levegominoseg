@@ -161,3 +161,9 @@
   color: var(--text);
   font-weight: 700;
 }
+
+.hero-lead strong small {
+  font-size: 0.72em;
+  font-weight: 500;
+  letter-spacing: 0;
+}

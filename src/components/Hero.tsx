@@ -43,7 +43,8 @@ export function Hero({
       <p className="hero-lead">
         {data.metric} a helyi SPS30 szenzorból. A kiválasztott időszak átlaga{" "}
         <strong className={`tone-${tone}`}>
-          {data.mean.toFixed(1)} {data.unit}
+          {data.mean.toFixed(1)}{" "}
+          <small>{data.unit}</small>
         </strong>
         {who != null ? (
           <>
@@ -51,7 +52,7 @@ export function Hero({
             — ez {pmLabel(data.mean, data.metric)} a WHO 24 órás irányértékhez{" "}
             (
             <strong className="hero-who-threshold">
-              {who} {data.unit}
+              {who} <small>{data.unit}</small>
             </strong>
             ) képest.
           </>

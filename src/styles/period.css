@@ -20,6 +20,13 @@
   gap: 0.5rem;
 }
 
+.period-chips--with-tip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .period-chip {
   appearance: none;
   cursor: pointer;
@@ -52,11 +59,6 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-}
-
-.period-range {
-  padding-top: 0.65rem;
-  border-top: 1px solid var(--line);
 }
 
 .period-subchoice {

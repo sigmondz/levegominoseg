@@ -21,6 +21,7 @@ describe("MetricFilter", () => {
       "aria-pressed",
       "false",
     );
+    expect(getByRole("button", { name: "Mit jelent a PM?" })).toBeInTheDocument();
   });
 
   test("kattintás meghívja onMetricChange-et", async () => {
