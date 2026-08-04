@@ -63,7 +63,7 @@ export function Stats({ data }: Props) {
           label="Maximum"
           value={String(data.max)}
           unit="µg/m³"
-          hint="legnagyobb 3 perces mean"
+          hint="legnagyobb 3 perces mérés"
           tone={pmTone(data.max)}
         />
         <Stat

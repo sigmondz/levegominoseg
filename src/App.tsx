@@ -34,9 +34,11 @@ const HourlyChart = lazy(async () => {
 
 function defaultMonthKey(fromMs: number, toMs: number): MonthKey {
   const months = listMonthPresets(fromMs, toMs);
+  const january = months.find((m) => m.id.endsWith("-01"));
   return (
-    months.at(-1)?.id ??
-    toMonthKey(new Date(toMs).getFullYear(), new Date(toMs).getMonth() + 1)
+    january?.id ??
+    months[0]?.id ??
+    toMonthKey(new Date(fromMs).getFullYear(), new Date(fromMs).getMonth() + 1)
   );
 }
 

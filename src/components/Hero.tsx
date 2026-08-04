@@ -39,9 +39,10 @@ export function Hero({
         PM2.5 a helyi SPS30 szenzorból. A kiválasztott időszak átlaga{" "}
         <strong className={`tone-${tone}`}>
           {data.mean.toFixed(1)} {data.unit}
-        </strong>{" "}
-        — {pmLabel(data.mean)} tartomány a WHO 24 órás irányértékhez ({WHO_24H}{" "}
-        {data.unit}) képest.
+        </strong>
+        <br />
+        — ez {pmLabel(data.mean)} a WHO 24 órás irányértékhez{" "}
+        (<strong className="tone-good">{WHO_24H} {data.unit}</strong>) képest.
       </p>
     </header>
   );
