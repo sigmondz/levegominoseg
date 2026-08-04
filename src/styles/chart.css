@@ -12,7 +12,8 @@
   border-radius: 12px;
   padding: 0.65rem 0.35rem 0.35rem;
   background: var(--chart-shell);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .chart-legend {

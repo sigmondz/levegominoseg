@@ -60,6 +60,8 @@
   padding: 0.85rem 1rem;
   border: none;
   background: var(--bg-elevated);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: var(--text);
   text-align: left;
   font: inherit;

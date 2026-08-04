@@ -35,8 +35,8 @@
 
 [data-theme="light"] {
   --bg: #e9f0f2;
-  --bg-elevated: #ffffff;
-  --bg-hover: #e0e9eb;
+  --bg-elevated: rgba(244, 249, 250, 0.62);
+  --bg-hover: rgba(228, 236, 238, 0.88);
   --fog: rgba(55, 145, 160, 0.28);
   --fog-strong: rgba(55, 175, 120, 0.22);
   --fog-warm: rgba(230, 150, 70, 0.16);
@@ -54,7 +54,7 @@
   --accent: #2f9f6f;
   --accent-hover: #268a5f;
   --accent-contrast: #ffffff;
-  --chart-shell: rgba(255, 255, 255, 0.88);
+  --chart-shell: rgba(240, 246, 247, 0.55);
   --chart-grid: rgba(18, 28, 34, 0.07);
   --chart-mean: #3a9fc4;
   --note-bg: rgba(212, 137, 42, 0.09);
