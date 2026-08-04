@@ -16,18 +16,12 @@ const baseSummary = buildSummary(
 describe("Hero", () => {
   test("PM2.5 szöveg és WHO 15", () => {
     const { getByText, container } = render(
-      <Hero
-        data={baseSummary}
-        dataFromMs={TEST_META.fromMs}
-        dataToMs={TEST_META.toMs}
-        theme="dark"
-        onToggleTheme={() => {}}
-      />,
+      <Hero data={baseSummary} theme="dark" onToggleTheme={() => {}} />,
     );
 
     expect(getByText("Levegőminőség Nagymaroson")).toBeInTheDocument();
     expect(container.textContent).toContain(
-      "A PM2.5 adatok helyi SPS30 szenzorból származnak",
+      "A PM2.5 adatok helyi szenzorból származnak",
     );
     expect(container.textContent).toContain("15 µg/m³");
   });
@@ -42,17 +36,11 @@ describe("Hero", () => {
       "3m",
     );
     const { container } = render(
-      <Hero
-        data={pm10}
-        dataFromMs={TEST_META.fromMs}
-        dataToMs={TEST_META.toMs}
-        theme="dark"
-        onToggleTheme={mock(() => {})}
-      />,
+      <Hero data={pm10} theme="dark" onToggleTheme={mock(() => {})} />,
     );
 
     expect(container.textContent).toContain(
-      "A PM10 adatok helyi SPS30 szenzorból származnak",
+      "A PM10 adatok helyi szenzorból származnak",
     );
     expect(container.textContent).toContain("45 µg/m³");
   });
@@ -67,13 +55,7 @@ describe("Hero", () => {
       "3m",
     );
     const { container, queryByText } = render(
-      <Hero
-        data={pm1}
-        dataFromMs={TEST_META.fromMs}
-        dataToMs={TEST_META.toMs}
-        theme="light"
-        onToggleTheme={() => {}}
-      />,
+      <Hero data={pm1} theme="light" onToggleTheme={() => {}} />,
     );
 
     expect(container.textContent).toContain(

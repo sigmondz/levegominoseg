@@ -382,13 +382,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Hero
-        data={data}
-        dataFromMs={series.meta.fromMs}
-        dataToMs={series.meta.toMs}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-      />
+      <Hero data={data} theme={theme} onToggleTheme={toggleTheme} />
       <MetricFilter metric={metric} onMetricChange={setMetric} />
       <PeriodFilter
         parentKey={parentKey}
@@ -494,18 +488,15 @@ export default function App() {
         <HourlyChart hourly={data.hourlyMean} />
       </Suspense>
       <footer className="footer">
-        <span>
-          Forrás: Grafana CSV ·{" "}
-          <code>
-            {data.sensor} {data.metric}
-          </code>
+        <span className="footer-meta">
+          {data.sensor} · {data.metric} · {dataFrom} →{" "}
+          {toDateInputValue(series.meta.toMs)} · {data.chipId}
         </span>
         <span className="footer-freshness">
-          Adatforrás: {dataFrom} → {lastMeasurement.slice(0, 10)} · Utolsó
-          mérés: {lastMeasurement} · Nem élő adat
+          Utolsó mérés: {lastMeasurement} · Nem élő adat
         </span>
         <span>
-          Nyers fájl: <code>{csvPath(metric)}</code>
+          Forrás: Grafana CSV · <code>{csvPath(metric)}</code>
         </span>
       </footer>
     </div>

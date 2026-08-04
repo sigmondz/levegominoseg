@@ -52,6 +52,13 @@
   letter-spacing: 0.02em;
 }
 
+.footer-meta {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .footer code {
   font-family: var(--font-mono);
   font-size: 0.8em;

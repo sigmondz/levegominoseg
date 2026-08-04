@@ -1,27 +1,17 @@
 import type { Summary } from "../lib/types";
 import type { Theme } from "../lib/theme";
-import { toDateInputValue } from "../lib/aggregate";
 import { pmLabel, pmTone, who24h } from "../lib/aqi";
 import { BrandMark } from "./BrandMark";
 import { ThemeToggle } from "./ThemeToggle";
 
 type Props = {
   data: Summary;
-  dataFromMs: number;
-  dataToMs: number;
   theme: Theme;
   onToggleTheme: () => void;
 };
 
-export function Hero({
-  data,
-  dataFromMs,
-  dataToMs,
-  theme,
-  onToggleTheme,
-}: Props) {
+export function Hero({ data, theme, onToggleTheme }: Props) {
   const tone = pmTone(data.mean, data.metric);
-  const rangeLabel = `${toDateInputValue(dataFromMs)} → ${toDateInputValue(dataToMs)}`;
   const who = who24h(data.metric);
 
   return (
@@ -33,16 +23,8 @@ export function Hero({
         <BrandMark className="hero-brand-mark" />
         <span>Levegőminőség Nagymaroson</span>
       </h1>
-      <div className="hero-meta">
-        <span>
-          {data.sensor} · {data.metric}
-        </span>
-        <span>{rangeLabel}</span>
-        <span>{data.chipId}</span>
-      </div>
       <p className="hero-lead">
-        A {data.metric} adatok helyi SPS30 szenzorból származnak. Az időszak
-        átlaga{" "}
+        A {data.metric} adatok helyi szenzorból származnak. Az időszak átlaga{" "}
         <strong className={`tone-${tone}`}>
           {data.mean.toFixed(1)}{" "}
           <small>{data.unit}</small>
