@@ -279,9 +279,10 @@ export default function App() {
 
   useEffect(() => {
     if (!series) return;
+    const extended = monthSelection === "full";
     setMaxWindow((current) =>
       resolveMaxWindow(trendGrain, series.meta.intervalMin, current, {
-        extended: monthSelection === "full",
+        extended,
       }),
     );
   }, [trendGrain, series, monthSelection]);
@@ -321,19 +322,21 @@ export default function App() {
     urlDefaults,
   ]);
 
+  const extendedPeriod = monthSelection === "full";
+
   const availableGrains = useMemo(() => {
     if (!range) return [] as TrendGrain[];
     return availableTrendGrains(range.fromMs, range.toMs, {
-      extended: monthSelection === "full",
+      extended: extendedPeriod,
     });
-  }, [range, monthSelection]);
+  }, [range, extendedPeriod]);
 
   const availableMaxWindowOptions = useMemo(() => {
     if (!series) return [] as MaxWindow[];
     return availableMaxWindows(trendGrain, series.meta.intervalMin, {
-      extended: monthSelection === "full",
+      extended: extendedPeriod,
     });
-  }, [series, trendGrain, monthSelection]);
+  }, [series, trendGrain, extendedPeriod]);
 
   const data = useMemo(() => {
     if (!series || !range) return null;
@@ -344,9 +347,9 @@ export default function App() {
       range.toMs,
       trendGrain,
       maxWindow,
-      { extendedMaxWindows: monthSelection === "full" },
+      { extendedMaxWindows: extendedPeriod },
     );
-  }, [series, range, trendGrain, maxWindow, monthSelection]);
+  }, [series, range, trendGrain, maxWindow, extendedPeriod]);
 
   const filteredPoints = useMemo(() => {
     if (!series || !range) return [];

@@ -82,6 +82,46 @@ export function availableMaxWindows(
   return catalog.filter((w) => maxWindowMs(w, intervalMin) < bucket);
 }
 
+/** Preferred max-window order per grain (first available wins). */
+const MAX_WINDOW_PREFERENCE: Record<TrendGrain, MaxWindow[]> = {
+  raw: ["3m"],
+  "6m": ["3m"],
+  "15m": ["6m", "3m"],
+  "30m": ["15m", "6m", "3m"],
+  hour: ["30m", "15m", "6m"],
+  "2h": ["hour", "30m", "15m"],
+  "4h": ["hour", "30m", "15m"],
+  "8h": ["hour", "30m", "15m"],
+  "12h": ["hour", "30m", "15m"],
+  day: ["hour", "30m", "15m"],
+  "2d": ["2h", "hour", "30m", "15m"],
+  week: ["day", "12h", "6h", "2h", "hour"],
+};
+
+const MAX_WINDOW_PREFERENCE_EXTENDED: Partial<Record<TrendGrain, MaxWindow[]>> =
+  {
+    day: ["6h", "2h", "hour", "30m", "15m"],
+    "2d": ["2h", "6h", "hour", "30m", "15m"],
+    week: ["day", "12h", "6h", "2h", "hour"],
+    hour: ["6h", "2h", "hour", "30m", "15m"],
+    "2h": ["6h", "2h", "hour", "30m", "15m"],
+    "4h": ["6h", "2h", "hour", "30m", "15m"],
+    "8h": ["6h", "2h", "hour", "30m", "15m"],
+    "12h": ["6h", "2h", "hour", "30m", "15m"],
+  };
+
+function preferredMaxWindows(
+  grain: TrendGrain,
+  extended: boolean,
+): MaxWindow[] {
+  if (extended) {
+    return (
+      MAX_WINDOW_PREFERENCE_EXTENDED[grain] ?? MAX_WINDOW_PREFERENCE[grain]
+    );
+  }
+  return MAX_WINDOW_PREFERENCE[grain];
+}
+
 /** Default max window scaled to the current trend grain. */
 export function suggestMaxWindow(
   grain: TrendGrain,
@@ -91,35 +131,10 @@ export function suggestMaxWindow(
   const available = availableMaxWindows(grain, intervalMin, options);
   if (available.length === 0) return "3m";
 
-  // Prefer a peak window that is coarse enough for the chart density:
-  // raw 3m spikes drown daily/weekly views.
-  const preferred: MaxWindow[] =
-    options?.extended === true && grain === "week"
-      ? ["day", "12h", "6h", "2h", "hour"]
-      : options?.extended === true && grain === "2d"
-        ? ["2h", "6h", "hour", "30m", "15m"]
-        : options?.extended === true && (grain === "day" || grain.endsWith("h"))
-          ? ["6h", "2h", "hour", "30m", "15m"]
-          : grain === "week"
-            ? ["day", "12h", "6h", "2h", "hour"]
-            : grain === "2d"
-              ? ["2h", "hour", "30m", "15m"]
-              : grain === "day"
-                ? ["hour", "30m", "15m"]
-                : grain === "12h" ||
-                    grain === "8h" ||
-                    grain === "4h" ||
-                    grain === "2h"
-                  ? ["hour", "30m", "15m"]
-                  : grain === "hour"
-                    ? ["30m", "15m", "6m"]
-                    : grain === "30m"
-                      ? ["15m", "6m", "3m"]
-                      : grain === "15m"
-                        ? ["6m", "3m"]
-                        : ["3m"];
-
-  for (const window of preferred) {
+  for (const window of preferredMaxWindows(
+    grain,
+    options?.extended === true,
+  )) {
     if (available.includes(window)) return window;
   }
   return available[0]!;

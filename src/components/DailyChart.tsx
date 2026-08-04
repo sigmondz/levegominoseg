@@ -140,6 +140,76 @@ function maxWindowLabel(window: MaxWindow, intervalMin: number): string {
   }
 }
 
+type BucketCopy = {
+  title: string;
+  kicker: string;
+  desc: (intervalMin: number) => string;
+  seriesDesc: (intervalMin: number) => string;
+  /** e.g. "nap" / "két nap" / "hét" — used in max tip */
+  bucket: string;
+  /** e.g. "napon belüli" / "két napon belüli" / "héten belüli" */
+  bucketInside: string;
+};
+
+const BUCKET_COPY: Partial<Record<TrendGrain, BucketCopy>> = {
+  day: {
+    title: "Napi átlag és csúcs",
+    kicker: "Napi aggregáció",
+    bucket: "nap",
+    bucketInside: "napon belüli",
+    desc: (intervalMin) =>
+      `Minden nap a ${intervalMin} perces mean értékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
+    seriesDesc: (intervalMin) =>
+      `Az adott nap összes érvényes ${intervalMin} perces mintájának számtani átlaga. A napi tipikus PM2.5-szintet mutatja: a rövid kiugrások kevésbé húzzák el, mint a nyers görbén. Így napokat hasonlíthatsz össze, és látod, általában milyen volt a terhelés. A grafikonon a folyamatos (nem szaggatott) görbe.`,
+  },
+  "2d": {
+    title: "Kétnapos átlag és csúcs",
+    kicker: "Kétnapos aggregáció",
+    bucket: "két nap",
+    bucketInside: "két napon belüli",
+    desc: (intervalMin) =>
+      `Minden kétnapos blokk a ${intervalMin} perces mean értékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
+    seriesDesc: (intervalMin) =>
+      `Az adott két nap összes érvényes ${intervalMin} perces mintájának számtani átlaga. Sűrűbb, mint a heti nézet, de simább, mint a napi — negyedéves és féléves tartományokban jól követhető. A grafikonon a folyamatos (nem szaggatott) görbe.`,
+  },
+  week: {
+    title: "Heti átlag és csúcs",
+    kicker: "Heti aggregáció",
+    bucket: "hét",
+    bucketInside: "héten belüli",
+    desc: (intervalMin) =>
+      `Minden hét (hétfőtől vasárnapig) a ${intervalMin} perces mean értékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
+    seriesDesc: (intervalMin) =>
+      `Az adott hét összes érvényes ${intervalMin} perces mintájának számtani átlaga. A heti tipikus PM2.5-szintet mutatja: a rövid kiugrások és a napi zaj kevésbé húzzák el. Negyedéves vagy féléves nézetben így jól összehasonlíthatók a hetek. A grafikonon a folyamatos (nem szaggatott) görbe.`,
+  },
+};
+
+const SHORT_GRAIN_UI: Partial<
+  Record<TrendGrain, { titlePrefix: string; windowLabel: string }>
+> = {
+  hour: { titlePrefix: "Óránkénti", windowLabel: "1 órában" },
+  "2h": { titlePrefix: "2 órás", windowLabel: "2 órában" },
+  "4h": { titlePrefix: "4 órás", windowLabel: "4 órában" },
+  "8h": { titlePrefix: "8 órás", windowLabel: "8 órában" },
+  "12h": { titlePrefix: "12 órás", windowLabel: "12 órában" },
+  "6m": { titlePrefix: "6 perces", windowLabel: "6 percben" },
+  "15m": { titlePrefix: "15 perces", windowLabel: "15 percben" },
+  "30m": { titlePrefix: "30 perces", windowLabel: "30 percben" },
+};
+
+function maxDescForBucket(
+  intervalMin: number,
+  maxLabel: string,
+  maxIsRaw: boolean,
+  bucket: string,
+  bucketInside: string,
+): string {
+  if (maxIsRaw) {
+    return `Az adott ${bucket} legmagasabb ${intervalMin} perces mérése — a csúcsterhelést emeli ki. A max ablak „${intervalMin} perc” beállításánál ez a nyers csúcs. A grafikonon a piros görbe.`;
+  }
+  return `Az adott ${bucketInside}, ${maxLabel} ablakokra számolt átlagok közül a legmagasabb. A rövid kiugrásokat simítja, a tartósabb csúcsokat megőrzi. A max ablakot fent állíthatod. A grafikonon a piros görbe.`;
+}
+
 function grainCopy(
   grain: TrendGrain,
   intervalMin: number,
@@ -158,78 +228,29 @@ function grainCopy(
     };
   }
 
-  if (grain === "day") {
+  const bucket = BUCKET_COPY[grain];
+  if (bucket) {
     return {
-      title: "Napi átlag és csúcs",
-      kicker: "Napi aggregáció",
-      desc: `Minden nap a ${intervalMin} perces mean értékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
+      title: bucket.title,
+      kicker: bucket.kicker,
+      desc: bucket.desc(intervalMin),
       seriesTitle: "Átlag görbe",
-      seriesDesc: `Az adott nap összes érvényes ${intervalMin} perces mintájának számtani átlaga. A napi tipikus PM2.5-szintet mutatja: a rövid kiugrások kevésbé húzzák el, mint a nyers görbén. Így napokat hasonlíthatsz össze, és látod, általában milyen volt a terhelés. A grafikonon a folyamatos (nem szaggatott) görbe.`,
-      maxDesc: maxIsRaw
-        ? `Az adott nap legmagasabb ${intervalMin} perces mérése — a napi csúcsterhelést emeli ki. Ha egy rövid, erős szennyezési hullám volt, itt jelenik meg, még ha az átlagot alig emelte is. A max ablak „${intervalMin} perc” beállításánál ez a nyers csúcs. A grafikonon a piros görbe.`
-        : `Az adott napon belüli, ${maxLabel} ablakokra számolt átlagok közül a legmagasabb. A rövid, egyedi kiugrásokat simítja, de a tartósabb csúcsokat megőrzi — ezért kevésbé „zajérzékeny”, mint a nyers max. A max ablakot fent állíthatod. A grafikonon a piros görbe.`,
+      seriesDesc: bucket.seriesDesc(intervalMin),
+      maxDesc: maxDescForBucket(
+        intervalMin,
+        maxLabel,
+        maxIsRaw,
+        bucket.bucket,
+        bucket.bucketInside,
+      ),
     };
   }
 
-  if (grain === "2d") {
-    return {
-      title: "Kétnapos átlag és csúcs",
-      kicker: "Kétnapos aggregáció",
-      desc: `Minden kétnapos blokk a ${intervalMin} perces mean értékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
-      seriesTitle: "Átlag görbe",
-      seriesDesc: `Az adott két nap összes érvényes ${intervalMin} perces mintájának számtani átlaga. Sűrűbb, mint a heti nézet, de simább, mint a napi — negyedéves és féléves tartományokban jól követhető. A grafikonon a folyamatos (nem szaggatott) görbe.`,
-      maxDesc: maxIsRaw
-        ? `Az adott két nap legmagasabb ${intervalMin} perces mérése — a csúcsterhelést emeli ki. A max ablak „${intervalMin} perc” beállításánál ez a nyers csúcs. A grafikonon a piros görbe.`
-        : `Az adott két napon belüli, ${maxLabel} ablakokra számolt átlagok közül a legmagasabb. A rövid kiugrásokat simítja, a tartósabb csúcsokat megőrzi. A max ablakot fent állíthatod. A grafikonon a piros görbe.`,
-    };
-  }
-
-  if (grain === "week") {
-    return {
-      title: "Heti átlag és csúcs",
-      kicker: "Heti aggregáció",
-      desc: `Minden hét (hétfőtől vasárnapig) a ${intervalMin} perces mean értékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
-      seriesTitle: "Átlag görbe",
-      seriesDesc: `Az adott hét összes érvényes ${intervalMin} perces mintájának számtani átlaga. A heti tipikus PM2.5-szintet mutatja: a rövid kiugrások és a napi zaj kevésbé húzzák el. Negyedéves vagy féléves nézetben így jól összehasonlíthatók a hetek. A grafikonon a folyamatos (nem szaggatott) görbe.`,
-      maxDesc: maxIsRaw
-        ? `Az adott hét legmagasabb ${intervalMin} perces mérése — a heti csúcsterhelést emeli ki. Ha egy rövid, erős szennyezési hullám volt, itt jelenik meg, még ha az átlagot alig emelte is. A max ablak „${intervalMin} perc” beállításánál ez a nyers csúcs. A grafikonon a piros görbe.`
-        : `Az adott héten belüli, ${maxLabel} ablakokra számolt átlagok közül a legmagasabb. A rövid, egyedi kiugrásokat simítja, de a tartósabb csúcsokat megőrzi — ezért kevésbé „zajérzékeny”, mint a nyers max. A max ablakot fent állíthatod. A grafikonon a piros görbe.`,
-    };
-  }
-
-  const windowLabel =
-    grain === "hour"
-      ? "1 órában"
-      : grain === "2h"
-        ? "2 órában"
-        : grain === "4h"
-          ? "4 órában"
-          : grain === "8h"
-            ? "8 órában"
-            : grain === "12h"
-              ? "12 órában"
-              : grain === "6m"
-                ? "6 percben"
-                : grain === "15m"
-                  ? "15 percben"
-                  : "30 percben";
-
-  const titlePrefix =
-    grain === "hour"
-      ? "Óránkénti"
-      : grain === "2h"
-        ? "2 órás"
-        : grain === "4h"
-          ? "4 órás"
-          : grain === "8h"
-            ? "8 órás"
-            : grain === "12h"
-              ? "12 órás"
-              : grain === "6m"
-                ? "6 perces"
-                : grain === "15m"
-                  ? "15 perces"
-                  : "30 perces";
+  const short = SHORT_GRAIN_UI[grain] ?? {
+    titlePrefix: "30 perces",
+    windowLabel: "30 percben",
+  };
+  const { titlePrefix, windowLabel } = short;
 
   return {
     title: `${titlePrefix} átlag és csúcs`,
