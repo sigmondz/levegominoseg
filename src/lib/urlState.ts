@@ -63,9 +63,19 @@ const GRAIN_VALUES: TrendGrain[] = [
   "8h",
   "12h",
   "day",
+  "week",
 ];
 
-const MAX_WINDOW_VALUES: MaxWindow[] = ["3m", "6m", "15m", "30m", "hour"];
+const MAX_WINDOW_VALUES: MaxWindow[] = [
+  "3m",
+  "6m",
+  "15m",
+  "30m",
+  "hour",
+  "2h",
+  "6h",
+  "day",
+];
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -259,6 +269,7 @@ export function parseViewState(
     trendGrain,
     meta.intervalMin,
     requestedMax,
+    { extended: monthSelection === "full" },
   );
 
   return {

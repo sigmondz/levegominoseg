@@ -30,9 +30,11 @@ const GRAIN_MS: Partial<Record<TrendGrain, number>> = {
   "4h": 4 * HOUR_MS,
   "8h": 8 * HOUR_MS,
   "12h": 12 * HOUR_MS,
+  week: 7 * DAY_MS,
 };
 
-const MAX_WINDOW_OPTIONS: MaxWindow[] = ["3m", "6m", "15m", "30m", "hour"];
+const MAX_WINDOW_BASE: MaxWindow[] = ["3m", "6m", "15m", "30m", "hour"];
+const MAX_WINDOW_EXTENDED: MaxWindow[] = ["2h", "6h", "day"];
 
 function grainBucketMs(grain: TrendGrain): number | null {
   if (grain === "raw") return null;
@@ -54,6 +56,12 @@ export function maxWindowMs(
       return 30 * MINUTE_MS;
     case "hour":
       return HOUR_MS;
+    case "2h":
+      return 2 * HOUR_MS;
+    case "6h":
+      return 6 * HOUR_MS;
+    case "day":
+      return DAY_MS;
   }
 }
 
@@ -61,12 +69,14 @@ export function maxWindowMs(
 export function availableMaxWindows(
   grain: TrendGrain,
   intervalMin: number,
+  options?: { extended?: boolean },
 ): MaxWindow[] {
   const bucket = grainBucketMs(grain);
   if (bucket == null) return [];
-  return MAX_WINDOW_OPTIONS.filter(
-    (w) => maxWindowMs(w, intervalMin) < bucket,
-  );
+  const catalog = options?.extended
+    ? [...MAX_WINDOW_BASE, ...MAX_WINDOW_EXTENDED]
+    : MAX_WINDOW_BASE;
+  return catalog.filter((w) => maxWindowMs(w, intervalMin) < bucket);
 }
 
 /** Keep current max window if still allowed, otherwise fall back to 3m. */
@@ -74,8 +84,9 @@ export function resolveMaxWindow(
   grain: TrendGrain,
   intervalMin: number,
   current: MaxWindow,
+  options?: { extended?: boolean },
 ): MaxWindow {
-  const available = availableMaxWindows(grain, intervalMin);
+  const available = availableMaxWindows(grain, intervalMin, options);
   if (available.length === 0) return "3m";
   return available.includes(current) ? current : "3m";
 }
@@ -519,6 +530,22 @@ function dayLabel(ms: number): string {
   return `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
 }
 
+/** Monday 00:00 local time of the week containing ms. */
+function startOfLocalWeek(ms: number): number {
+  const d = new Date(ms);
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay(); // 0=Sun … 6=Sat
+  const offset = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + offset);
+  return d.getTime();
+}
+
+function weekLabel(ms: number): string {
+  const start = startOfLocalWeek(ms);
+  const end = start + 6 * DAY_MS;
+  return `${dayLabel(start)}–${dayLabel(end)}`;
+}
+
 function hourLabel(ms: number): string {
   const d = new Date(ms);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -546,7 +573,8 @@ export function availableTrendGrains(
   if (span <= 16 * DAY_MS) {
     return ["30m", "hour", "2h", "4h", "8h", "12h", "day"];
   }
-  return ["hour", "2h", "4h", "8h", "12h", "day"];
+  // Quarters / halves: weekly buckets stay readable
+  return ["hour", "2h", "4h", "8h", "12h", "day", "week"];
 }
 
 /** Default chart density for a selected span. */
@@ -555,7 +583,8 @@ export function suggestTrendGrain(fromMs: number, toMs: number): TrendGrain {
   if (span <= 36 * HOUR_MS) return "15m";
   if (span <= 8 * DAY_MS) return "hour";
   if (span <= 16 * DAY_MS) return "2h";
-  return "day";
+  if (span <= 60 * DAY_MS) return "day";
+  return "week";
 }
 
 /** Keep the current grain if still allowed, otherwise fall back to the default. */
@@ -624,9 +653,12 @@ function buildTrend(
   const trendMap = new Map<string, { ms: number; samples: SeriesEntry[] }>();
   for (const point of filtered) {
     const [t] = point;
-    const bucketMs = bucketSize
-      ? Math.floor(t / bucketSize) * bucketSize
-      : startOfLocalDay(t);
+    const bucketMs =
+      grain === "week"
+        ? startOfLocalWeek(t)
+        : bucketSize
+          ? Math.floor(t / bucketSize) * bucketSize
+          : startOfLocalDay(t);
     const key = String(bucketMs);
     const bucket = trendMap.get(key);
     if (bucket) bucket.samples.push(point);
@@ -639,11 +671,13 @@ function buildTrend(
       const values = samples.map(([, v]) => v);
       return {
         label:
-          grain === "day"
-            ? dayLabel(ms)
-            : grain === "hour" || grain.endsWith("h")
-              ? hourLabel(ms)
-              : minuteLabel(ms),
+          grain === "week"
+            ? weekLabel(ms)
+            : grain === "day"
+              ? dayLabel(ms)
+              : grain === "hour" || grain.endsWith("h")
+                ? hourLabel(ms)
+                : minuteLabel(ms),
         mean: Number(
           (values.reduce((s, x) => s + x, 0) / values.length).toFixed(2),
         ),
@@ -661,6 +695,7 @@ export function buildSummary(
   toMs: number,
   trendGrain: TrendGrain = suggestTrendGrain(fromMs, toMs),
   maxWindow: MaxWindow = "3m",
+  options?: { extendedMaxWindows?: boolean },
 ): Summary {
   const filtered = filterPoints(points, fromMs, toMs);
   const vals = filtered.map(([, v]) => v);
@@ -713,6 +748,7 @@ export function buildSummary(
     trendGrain,
     meta.intervalMin,
     maxWindow,
+    { extended: options?.extendedMaxWindows === true },
   );
   const trend = buildTrend(
     filtered,

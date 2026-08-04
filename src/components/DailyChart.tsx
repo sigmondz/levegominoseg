@@ -92,6 +92,7 @@ const GRAIN_OPTIONS: { id: TrendGrain; label: string }[] = [
   { id: "8h", label: "8 óra" },
   { id: "12h", label: "12 óra" },
   { id: "day", label: "Nap" },
+  { id: "week", label: "Hét" },
 ];
 
 const MAX_WINDOW_OPTIONS: { id: MaxWindow; label: string }[] = [
@@ -100,6 +101,9 @@ const MAX_WINDOW_OPTIONS: { id: MaxWindow; label: string }[] = [
   { id: "15m", label: "15 perc" },
   { id: "30m", label: "30 perc" },
   { id: "hour", label: "1 óra" },
+  { id: "2h", label: "2 óra" },
+  { id: "6h", label: "6 óra" },
+  { id: "day", label: "Nap" },
 ];
 
 type GrainCopy = {
@@ -123,6 +127,12 @@ function maxWindowLabel(window: MaxWindow, intervalMin: number): string {
       return "30 perces";
     case "hour":
       return "1 órás";
+    case "2h":
+      return "2 órás";
+    case "6h":
+      return "6 órás";
+    case "day":
+      return "napi";
   }
 }
 
@@ -154,6 +164,19 @@ function grainCopy(
       maxDesc: maxIsRaw
         ? `Az adott nap legmagasabb ${intervalMin} perces mérése — a napi csúcsterhelést emeli ki. Ha egy rövid, erős szennyezési hullám volt, itt jelenik meg, még ha az átlagot alig emelte is. A max ablak „${intervalMin} perc” beállításánál ez a nyers csúcs. A grafikonon a piros görbe.`
         : `Az adott napon belüli, ${maxLabel} ablakokra számolt átlagok közül a legmagasabb. A rövid, egyedi kiugrásokat simítja, de a tartósabb csúcsokat megőrzi — ezért kevésbé „zajérzékeny”, mint a nyers max. A max ablakot fent állíthatod. A grafikonon a piros görbe.`,
+    };
+  }
+
+  if (grain === "week") {
+    return {
+      title: "Heti átlag és csúcs",
+      kicker: "Heti aggregáció",
+      desc: `Minden hét (hétfőtől vasárnapig) a ${intervalMin} perces mean értékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
+      seriesTitle: "Átlag görbe",
+      seriesDesc: `Az adott hét összes érvényes ${intervalMin} perces mintájának számtani átlaga. A heti tipikus PM2.5-szintet mutatja: a rövid kiugrások és a napi zaj kevésbé húzzák el. Negyedéves vagy féléves nézetben így jól összehasonlíthatók a hetek. A grafikonon a folyamatos (nem szaggatott) görbe.`,
+      maxDesc: maxIsRaw
+        ? `Az adott hét legmagasabb ${intervalMin} perces mérése — a heti csúcsterhelést emeli ki. Ha egy rövid, erős szennyezési hullám volt, itt jelenik meg, még ha az átlagot alig emelte is. A max ablak „${intervalMin} perc” beállításánál ez a nyers csúcs. A grafikonon a piros görbe.`
+        : `Az adott héten belüli, ${maxLabel} ablakokra számolt átlagok közül a legmagasabb. A rövid, egyedi kiugrásokat simítja, de a tartósabb csúcsokat megőrzi — ezért kevésbé „zajérzékeny”, mint a nyers max. A max ablakot fent állíthatod. A grafikonon a piros görbe.`,
     };
   }
 

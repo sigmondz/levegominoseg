@@ -151,6 +151,7 @@ describe("aggregate", () => {
 
     const long = availableTrendGrains(TEST_META.fromMs, TEST_META.toMs);
     expect(long).toContain("day");
+    expect(long).toContain("week");
     expect(long).not.toContain("raw");
   });
 
@@ -168,16 +169,41 @@ describe("aggregate", () => {
       ),
     ).toBe("15m");
     expect(suggestTrendGrain(TEST_META.fromMs, TEST_META.toMs)).toBe("day");
+    expect(
+      suggestTrendGrain(
+        TEST_META.fromMs,
+        TEST_META.fromMs + 90 * 24 * 60 * 60 * 1000,
+      ),
+    ).toBe("week");
   });
 
   test("availableMaxWindows és resolveMaxWindow", () => {
     const dayWindows = availableMaxWindows("day", 3);
     expect(dayWindows.length).toBeGreaterThan(0);
     expect(dayWindows).toContain("3m");
+    expect(dayWindows).not.toContain("2h");
+    expect(dayWindows).not.toContain("6h");
+    expect(dayWindows).not.toContain("day");
 
     expect(availableMaxWindows("raw", 3)).toEqual([]);
     expect(resolveMaxWindow("raw", 3, "hour")).toBe("3m");
     expect(resolveMaxWindow("day", 3, "hour")).toBe("hour");
+  });
+
+  test("extended max ablakok csak extended: true esetén", () => {
+    const dayExt = availableMaxWindows("day", 3, { extended: true });
+    expect(dayExt).toContain("2h");
+    expect(dayExt).toContain("6h");
+    expect(dayExt).not.toContain("day");
+
+    const weekExt = availableMaxWindows("week", 3, { extended: true });
+    expect(weekExt).toContain("2h");
+    expect(weekExt).toContain("6h");
+    expect(weekExt).toContain("day");
+
+    expect(resolveMaxWindow("day", 3, "2h")).toBe("3m");
+    expect(resolveMaxWindow("day", 3, "2h", { extended: true })).toBe("2h");
+    expect(resolveMaxWindow("week", 3, "day", { extended: true })).toBe("day");
   });
 
   test("buildSummary statisztikák és trend", () => {

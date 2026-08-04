@@ -84,10 +84,19 @@ export type TrendGrain =
   | "4h"
   | "8h"
   | "12h"
-  | "day";
+  | "day"
+  | "week";
 
 /** Window used to compute the MAX series inside each trend bucket */
-export type MaxWindow = "3m" | "6m" | "15m" | "30m" | "hour";
+export type MaxWindow =
+  | "3m"
+  | "6m"
+  | "15m"
+  | "30m"
+  | "hour"
+  | "2h"
+  | "6h"
+  | "day";
 
 export type PeriodRange = {
   fromMs: number;
