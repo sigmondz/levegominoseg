@@ -9,16 +9,20 @@ import {
   YAxis,
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
-import type { TrendGrain, TrendPoint } from "../lib/types";
+import type { MaxWindow, TrendGrain, TrendPoint } from "../lib/types";
 import { GRAFANA_THRESHOLD, WHO_24H } from "../lib/aqi";
+import { InfoTip } from "./InfoTip";
 
 type Props = {
   trend: TrendPoint[];
   mean: number;
   grain: TrendGrain;
   availableGrains: TrendGrain[];
+  maxWindow: MaxWindow;
+  availableMaxWindows: MaxWindow[];
   intervalMin: number;
   onGrainChange: (grain: TrendGrain) => void;
+  onMaxWindowChange: (window: MaxWindow) => void;
 };
 
 const GRAIN_OPTIONS: { id: TrendGrain; label: string }[] = [
@@ -34,6 +38,14 @@ const GRAIN_OPTIONS: { id: TrendGrain; label: string }[] = [
   { id: "day", label: "Nap" },
 ];
 
+const MAX_WINDOW_OPTIONS: { id: MaxWindow; label: string }[] = [
+  { id: "3m", label: "3 perc" },
+  { id: "6m", label: "6 perc" },
+  { id: "15m", label: "15 perc" },
+  { id: "30m", label: "30 perc" },
+  { id: "hour", label: "1 óra" },
+];
+
 type GrainCopy = {
   title: string;
   kicker: string;
@@ -43,7 +55,29 @@ type GrainCopy = {
   maxDesc?: string;
 };
 
-function grainCopy(grain: TrendGrain, intervalMin: number): GrainCopy {
+function maxWindowLabel(window: MaxWindow, intervalMin: number): string {
+  switch (window) {
+    case "3m":
+      return `${intervalMin} perces`;
+    case "6m":
+      return "6 perces";
+    case "15m":
+      return "15 perces";
+    case "30m":
+      return "30 perces";
+    case "hour":
+      return "1 órás";
+  }
+}
+
+function grainCopy(
+  grain: TrendGrain,
+  intervalMin: number,
+  maxWindow: MaxWindow,
+): GrainCopy {
+  const maxLabel = maxWindowLabel(maxWindow, intervalMin);
+  const maxIsRaw = maxWindow === "3m";
+
   if (grain === "raw") {
     return {
       title: `${intervalMin} perces mérések`,
@@ -60,10 +94,10 @@ function grainCopy(grain: TrendGrain, intervalMin: number): GrainCopy {
       kicker: "Napi aggregáció",
       desc: `Minden nap a ${intervalMin} perces mean értékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
       seriesTitle: "Átlag (görbe)",
-      seriesDesc:
-        "Az adott nap összes 3 perces mintájának számtani átlaga — a napi tipikus PM2.5-szintet mutatja.",
-      maxDesc:
-        "Az adott nap legmagasabb 3 perces értéke — a napi csúcsterhelést mutatja.",
+      seriesDesc: `Az adott nap összes ${intervalMin} perces mintájának számtani átlaga — a napi tipikus PM2.5-szintet mutatja.`,
+      maxDesc: maxIsRaw
+        ? `Az adott nap legmagasabb ${intervalMin} perces értéke — a napi csúcsterhelést mutatja.`
+        : `Az adott nap legmagasabb ${maxLabel} átlaga — a rövid csúcsokat simítva mutatja.`,
     };
   }
 
@@ -107,7 +141,9 @@ function grainCopy(grain: TrendGrain, intervalMin: number): GrainCopy {
     desc: `A kiválasztott tartomány ${titlePrefix.toLowerCase()} mean és max értékei a ${intervalMin} perces mintákból.`,
     seriesTitle: "Átlag (görbe)",
     seriesDesc: `Az adott ${windowLabel} mért minták számtani átlaga — a tipikus terhelést mutatja.`,
-    maxDesc: `Az adott ${windowLabel} mért legmagasabb érték — a rövid csúcsokat emeli ki.`,
+    maxDesc: maxIsRaw
+      ? `Az adott ${windowLabel} mért legmagasabb érték — a rövid csúcsokat emeli ki.`
+      : `Az adott ${windowLabel} legmagasabb ${maxLabel} átlaga — a rövid csúcsokat simítva mutatja.`,
   };
 }
 
@@ -116,11 +152,14 @@ export function DailyChart({
   mean,
   grain,
   availableGrains,
+  maxWindow,
+  availableMaxWindows: maxWindows,
   intervalMin,
   onGrainChange,
+  onMaxWindowChange,
 }: Props) {
   const colors = useChartColors();
-  const copy = grainCopy(grain, intervalMin);
+  const copy = grainCopy(grain, intervalMin, maxWindow);
   const showMax = grain !== "raw";
   const animate = trend.length <= 400;
 
@@ -152,6 +191,12 @@ export function DailyChart({
     opt.id === "raw" ? { ...opt, label: `${intervalMin} perc` } : opt,
   );
 
+  const maxWindowOptions = MAX_WINDOW_OPTIONS.filter((opt) =>
+    maxWindows.includes(opt.id),
+  ).map((opt) =>
+    opt.id === "3m" ? { ...opt, label: `${intervalMin} perc` } : opt,
+  );
+
   return (
     <section className="section" id="napi" aria-labelledby="daily-title">
       <div className="section-head">
@@ -161,9 +206,17 @@ export function DailyChart({
         </h2>
         <p className="section-desc">{copy.desc}</p>
         <div className="grain-picker" role="group" aria-label="Adatsűrűség">
-          <p className="period-months-label" id="grain-filter-label">
-            Adatsűrűség
-          </p>
+          <div className="label-with-tip">
+            <p className="period-months-label" id="grain-filter-label">
+              Adatsűrűség
+            </p>
+            <InfoTip label="Mi az adatsűrűség?" tipId="grain-tip">
+              Azt állítja, milyen hosszú időszakokból rajzolódjon egy-egy pont
+              a görbén. Például „Nap” esetén minden naphoz egy átlag (és egy
+              csúcs) tartozik. A szenzor továbbra is 3 percenként mér — ez csak
+              a megjelenítést sűríti vagy ritkítja.
+            </InfoTip>
+          </div>
           <div className="period-chips" aria-labelledby="grain-filter-label">
             {grainOptions.map((opt) => (
               <button
@@ -178,6 +231,37 @@ export function DailyChart({
             ))}
           </div>
         </div>
+        {showMax && maxWindowOptions.length > 0 ? (
+          <div className="grain-picker" role="group" aria-label="Max ablak">
+            <div className="label-with-tip">
+              <p className="period-months-label" id="max-window-filter-label">
+                Max ablak
+              </p>
+              <InfoTip label="Mi a max ablak?" tipId="max-window-tip">
+                A piros csúcsgörbe számításához: a választott hosszúságú
+                átlagok közül vesszük a legnagyobbat (pl. egy napon belül).
+                3 percnél a legmagasabb nyers mérést kapod; hosszabb ablaknál
+                a rövid kiugrások simábbak lesznek.
+              </InfoTip>
+            </div>
+            <div
+              className="period-chips"
+              aria-labelledby="max-window-filter-label"
+            >
+              {maxWindowOptions.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  className={`period-chip${maxWindow === opt.id ? " is-active" : ""}`}
+                  aria-pressed={maxWindow === opt.id}
+                  onClick={() => onMaxWindowChange(opt.id)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
       <div className="chart-shell">
         <div className="chart-legend" aria-label="Adatsorok">

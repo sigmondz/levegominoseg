@@ -4,18 +4,21 @@ import { PeriodFilter } from "./components/PeriodFilter";
 import { Stats } from "./components/Stats";
 import { useTheme } from "./hooks/useTheme";
 import {
+  availableMaxWindows,
   availableTrendGrains,
   buildSummary,
   listDaysInMonth,
   listMonthPresets,
   listWindowsInMonth,
   monthBounds,
+  resolveMaxWindow,
   resolveTrendGrain,
   resolveWithinMonth,
   toDateInputValue,
   toMonthKey,
 } from "./lib/aggregate";
 import type {
+  MaxWindow,
   MonthKey,
   SeriesFile,
   TrendGrain,
@@ -72,6 +75,7 @@ export default function App() {
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [trendGrain, setTrendGrain] = useState<TrendGrain>("day");
+  const [maxWindow, setMaxWindow] = useState<MaxWindow>("3m");
 
   useEffect(() => {
     let cancelled = false;
@@ -142,10 +146,22 @@ export default function App() {
     );
   }, [range?.fromMs, range?.toMs]);
 
+  useEffect(() => {
+    if (!series) return;
+    setMaxWindow((current) =>
+      resolveMaxWindow(trendGrain, series.meta.intervalMin, current),
+    );
+  }, [trendGrain, series]);
+
   const availableGrains = useMemo(() => {
     if (!range) return [] as TrendGrain[];
     return availableTrendGrains(range.fromMs, range.toMs);
   }, [range]);
+
+  const availableMaxWindowOptions = useMemo(() => {
+    if (!series) return [] as MaxWindow[];
+    return availableMaxWindows(trendGrain, series.meta.intervalMin);
+  }, [series, trendGrain]);
 
   const data = useMemo(() => {
     if (!series || !range) return null;
@@ -155,8 +171,9 @@ export default function App() {
       range.fromMs,
       range.toMs,
       trendGrain,
+      maxWindow,
     );
-  }, [series, range, trendGrain]);
+  }, [series, range, trendGrain, maxWindow]);
 
   if (error) {
     return (
@@ -241,8 +258,11 @@ export default function App() {
           mean={data.mean}
           grain={trendGrain}
           availableGrains={availableGrains}
+          maxWindow={maxWindow}
+          availableMaxWindows={availableMaxWindowOptions}
           intervalMin={series.meta.intervalMin}
           onGrainChange={setTrendGrain}
+          onMaxWindowChange={setMaxWindow}
         />
         <HourlyChart hourly={data.hourlyMean} />
       </Suspense>

@@ -77,6 +77,9 @@ export type TrendGrain =
   | "12h"
   | "day";
 
+/** Window used to compute the MAX series inside each trend bucket */
+export type MaxWindow = "3m" | "6m" | "15m" | "30m" | "hour";
+
 export type PeriodRange = {
   fromMs: number;
   toMs: number;

@@ -1,5 +1,6 @@
 import type { Summary } from "../lib/types";
 import { pmTone } from "../lib/aqi";
+import { InfoTip } from "./InfoTip";
 
 type Props = {
   data: Summary;
@@ -11,16 +12,33 @@ function Stat({
   unit,
   hint,
   tone,
+  tip,
+  tipId,
+  tipLabel,
 }: {
   label: string;
   value: string;
   unit?: string;
   hint: string;
   tone?: string;
+  tip?: string;
+  tipId?: string;
+  tipLabel?: string;
 }) {
   return (
     <div className="stat">
-      <div className="stat-label">{label}</div>
+      <div className="stat-label">
+        {tip && tipId && tipLabel ? (
+          <span className="label-with-tip">
+            <span>{label}</span>
+            <InfoTip label={tipLabel} tipId={tipId} inCard>
+              {tip}
+            </InfoTip>
+          </span>
+        ) : (
+          label
+        )}
+      </div>
       <div className={`stat-value ${tone ? `tone-${tone}` : ""}`}>
         {value}
         {unit ? <small>{unit}</small> : null}
@@ -51,6 +69,9 @@ export function Stats({ data }: Props) {
           unit="µg/m³"
           hint={`${data.above15pct}% a WHO 15 felett`}
           tone={pmTone(data.mean)}
+          tipId="mean-tip"
+          tipLabel="Mi az átlag?"
+          tip="A kiválasztott időszak összes érvényes 3 perces mérésének számtani közepe. Alatta az látszik, a mérések hány százaléka volt a WHO 15 µg/m³ irányértéke felett."
         />
         <Stat
           label="Medián"
@@ -58,6 +79,9 @@ export function Stats({ data }: Props) {
           unit="µg/m³"
           hint={`p95: ${data.p95.toFixed(1)} µg/m³`}
           tone={pmTone(data.p50)}
+          tipId="median-tip"
+          tipLabel="Mi a medián?"
+          tip="A középső érték: a mérések fele ez alatt, fele felette van. Kevesebb szélsőség húzza el, mint az átlagot. Alatta a p95 azt jelenti: a mérések 95%-a ez alatt maradt."
         />
         <Stat
           label="Maximum"
@@ -65,12 +89,18 @@ export function Stats({ data }: Props) {
           unit="µg/m³"
           hint="legnagyobb 3 perces mérés"
           tone={pmTone(data.max)}
+          tipId="max-tip"
+          tipLabel="Mi a maximum?"
+          tip="A kiválasztott időszak legmagasabb 3 perces mérése. Ha a grafikonon nagyobb max ablakot választasz, a piros görbe ettől eltérhet — ott már simított csúcsot látsz."
         />
         <Stat
           label="≥ 80 µg/m³"
           value={`${data.above80pct}%`}
           hint="Grafana piros küszöb felett"
           tone="bad"
+          tipId="above80-tip"
+          tipLabel="Mi a 80 µg/m³ küszöb?"
+          tip="A helyi riasztási szint: efelett számít erősen szennyezettnek a levegő (a Grafana dashboardon piros). A százalék a mérések aránya, amelyek átlépték ezt."
         />
       </div>
     </section>

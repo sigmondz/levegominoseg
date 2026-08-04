@@ -2,6 +2,7 @@ import type {
   DailyPoint,
   DatasetMeta,
   HourlyPoint,
+  MaxWindow,
   MonthKey,
   PeriodRange,
   SeriesEntry,
@@ -13,17 +14,66 @@ import type {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
+const MINUTE_MS = 60 * 1000;
 
 const GRAIN_MS: Partial<Record<TrendGrain, number>> = {
-  "6m": 6 * 60 * 1000,
-  "15m": 15 * 60 * 1000,
-  "30m": 30 * 60 * 1000,
+  "6m": 6 * MINUTE_MS,
+  "15m": 15 * MINUTE_MS,
+  "30m": 30 * MINUTE_MS,
   hour: HOUR_MS,
   "2h": 2 * HOUR_MS,
   "4h": 4 * HOUR_MS,
   "8h": 8 * HOUR_MS,
   "12h": 12 * HOUR_MS,
 };
+
+const MAX_WINDOW_OPTIONS: MaxWindow[] = ["3m", "6m", "15m", "30m", "hour"];
+
+function grainBucketMs(grain: TrendGrain): number | null {
+  if (grain === "raw") return null;
+  return GRAIN_MS[grain] ?? DAY_MS;
+}
+
+export function maxWindowMs(
+  window: MaxWindow,
+  intervalMin: number,
+): number {
+  switch (window) {
+    case "3m":
+      return Math.max(1, intervalMin) * MINUTE_MS;
+    case "6m":
+      return 6 * MINUTE_MS;
+    case "15m":
+      return 15 * MINUTE_MS;
+    case "30m":
+      return 30 * MINUTE_MS;
+    case "hour":
+      return HOUR_MS;
+  }
+}
+
+/** Max-window options strictly smaller than the current trend grain bucket. */
+export function availableMaxWindows(
+  grain: TrendGrain,
+  intervalMin: number,
+): MaxWindow[] {
+  const bucket = grainBucketMs(grain);
+  if (bucket == null) return [];
+  return MAX_WINDOW_OPTIONS.filter(
+    (w) => maxWindowMs(w, intervalMin) < bucket,
+  );
+}
+
+/** Keep current max window if still allowed, otherwise fall back to 3m. */
+export function resolveMaxWindow(
+  grain: TrendGrain,
+  intervalMin: number,
+  current: MaxWindow,
+): MaxWindow {
+  const available = availableMaxWindows(grain, intervalMin);
+  if (available.length === 0) return "3m";
+  return available.includes(current) ? current : "3m";
+}
 
 const MONTH_NAMES_HU = [
   "Január",
@@ -335,9 +385,37 @@ function filterPoints(
   return points.filter(([t]) => t >= fromMs && t <= toMs);
 }
 
+function maxOfWindowedMeans(
+  samples: SeriesEntry[],
+  windowMs: number,
+  rawMs: number,
+): number {
+  if (samples.length === 0) return 0;
+  if (windowMs <= rawMs) {
+    return Math.max(...samples.map(([, v]) => v));
+  }
+
+  const subMap = new Map<number, number[]>();
+  for (const [t, v] of samples) {
+    const key = Math.floor(t / windowMs) * windowMs;
+    const bucket = subMap.get(key);
+    if (bucket) bucket.push(v);
+    else subMap.set(key, [v]);
+  }
+
+  let max = -Infinity;
+  for (const values of subMap.values()) {
+    const mean = values.reduce((s, x) => s + x, 0) / values.length;
+    if (mean > max) max = mean;
+  }
+  return max === -Infinity ? 0 : max;
+}
+
 function buildTrend(
   filtered: SeriesEntry[],
   grain: TrendGrain,
+  maxWindow: MaxWindow,
+  intervalMin: number,
 ): TrendPoint[] {
   if (grain === "raw") {
     return filtered.map(([t, v]) => ({
@@ -348,28 +426,39 @@ function buildTrend(
   }
 
   const bucketSize = GRAIN_MS[grain];
-  const trendMap = new Map<string, { ms: number; values: number[] }>();
-  for (const [t, v] of filtered) {
+  const windowMs = maxWindowMs(maxWindow, intervalMin);
+  const rawMs = Math.max(1, intervalMin) * MINUTE_MS;
+  const trendMap = new Map<string, { ms: number; samples: SeriesEntry[] }>();
+  for (const point of filtered) {
+    const [t] = point;
     const bucketMs = bucketSize
       ? Math.floor(t / bucketSize) * bucketSize
       : startOfLocalDay(t);
     const key = String(bucketMs);
     const bucket = trendMap.get(key);
-    if (bucket) bucket.values.push(v);
-    else trendMap.set(key, { ms: bucketMs, values: [v] });
+    if (bucket) bucket.samples.push(point);
+    else trendMap.set(key, { ms: bucketMs, samples: [point] });
   }
 
   return [...trendMap.values()]
     .sort((a, b) => a.ms - b.ms)
-    .map(({ ms, values }) => ({
-      label: grain === "day" ? dayLabel(ms) : grain === "hour" || grain.endsWith("h")
-        ? hourLabel(ms)
-        : minuteLabel(ms),
-      mean: Number(
-        (values.reduce((s, x) => s + x, 0) / values.length).toFixed(2),
-      ),
-      max: Number(Math.max(...values).toFixed(2)),
-    }));
+    .map(({ ms, samples }) => {
+      const values = samples.map(([, v]) => v);
+      return {
+        label:
+          grain === "day"
+            ? dayLabel(ms)
+            : grain === "hour" || grain.endsWith("h")
+              ? hourLabel(ms)
+              : minuteLabel(ms),
+        mean: Number(
+          (values.reduce((s, x) => s + x, 0) / values.length).toFixed(2),
+        ),
+        max: Number(
+          maxOfWindowedMeans(samples, windowMs, rawMs).toFixed(2),
+        ),
+      };
+    });
 }
 
 export function buildSummary(
@@ -378,6 +467,7 @@ export function buildSummary(
   fromMs: number,
   toMs: number,
   trendGrain: TrendGrain = suggestTrendGrain(fromMs, toMs),
+  maxWindow: MaxWindow = "3m",
 ): Summary {
   const filtered = filterPoints(points, fromMs, toMs);
   const vals = filtered.map(([, v]) => v);
@@ -426,7 +516,17 @@ export function buildSummary(
     };
   }).filter((h) => (hourlyMap.get(h.hour)?.length ?? 0) > 0);
 
-  const trend = buildTrend(filtered, trendGrain);
+  const resolvedMax = resolveMaxWindow(
+    trendGrain,
+    meta.intervalMin,
+    maxWindow,
+  );
+  const trend = buildTrend(
+    filtered,
+    trendGrain,
+    resolvedMax,
+    meta.intervalMin,
+  );
 
   const valid = vals.length;
   const expected =
