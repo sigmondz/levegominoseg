@@ -149,7 +149,7 @@ function grainCopy(
       title: "Napi átlag és csúcs",
       kicker: "Napi aggregáció",
       desc: `Minden nap a ${intervalMin} perces mean értékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
-      seriesTitle: "Átlag (görbe)",
+      seriesTitle: "Átlag görbe",
       seriesDesc: `Az adott nap összes érvényes ${intervalMin} perces mintájának számtani átlaga. A napi tipikus PM2.5-szintet mutatja: a rövid kiugrások kevésbé húzzák el, mint a nyers görbén. Így napokat hasonlíthatsz össze, és látod, általában milyen volt a terhelés. A grafikonon a folyamatos (nem szaggatott) görbe.`,
       maxDesc: maxIsRaw
         ? `Az adott nap legmagasabb ${intervalMin} perces mérése — a napi csúcsterhelést emeli ki. Ha egy rövid, erős szennyezési hullám volt, itt jelenik meg, még ha az átlagot alig emelte is. A max ablak „${intervalMin} perc” beállításánál ez a nyers csúcs. A grafikonon a piros görbe.`
@@ -195,7 +195,7 @@ function grainCopy(
     title: `${titlePrefix} átlag és csúcs`,
     kicker: `${titlePrefix} aggregáció`,
     desc: `A kiválasztott tartomány ${titlePrefix.toLowerCase()} mean és max értékei a ${intervalMin} perces mintákból.`,
-    seriesTitle: "Átlag (görbe)",
+    seriesTitle: "Átlag görbe",
     seriesDesc: `Az adott ${windowLabel} mért, érvényes ${intervalMin} perces minták számtani átlaga. A tipikus terhelést mutatja ebben az időablakban: a rövid zaj kevésbé látszik, mint a nyers görbén. Így követheted, hogyan alakult a PM2.5 a választott adatsűrűség szerint. A grafikonon a folyamatos (nem szaggatott) görbe.`,
     maxDesc: maxIsRaw
       ? `Az adott ${windowLabel} mért legmagasabb ${intervalMin} perces érték — a rövid csúcsokat emeli ki. Ha egy erős, rövid szennyezési hullám volt, itt jelenik meg, még ha az átlagot alig emelte is. A max ablak „${intervalMin} perc” beállításánál ez a nyers csúcs. A grafikonon a piros görbe.`
@@ -342,29 +342,10 @@ export function DailyChart({
         )}
       </div>
       <div className="chart-shell">
-        <div className="chart-legend" aria-label="Adatsorok">
-          <span>
-            <i
-              className="swatch swatch-solid"
-              style={{ background: colors.chartMean }}
-            />{" "}
-            {showMax ? "Átlag (görbe)" : "Mért érték"}
-          </span>
-          {showMax ? (
-            <span>
-              <i
-                className="swatch swatch-solid"
-                style={{ background: colors.bad }}
-              />{" "}
-              Max (görbe)
-            </span>
-          ) : null}
-        </div>
-
         {trend.length === 0 ? (
           <p className="chart-empty">Nincs adat a kiválasztott időszakban.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={260}>
+          <ResponsiveContainer width="100%" height={400}>
             <LineChart
               data={trend}
               margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
@@ -476,7 +457,7 @@ export function DailyChart({
                   aria-hidden
                 />
                 <div className="label-with-tip">
-                  <strong>Max (görbe)</strong>
+                  <strong>Max görbe</strong>
                   <InfoTip label="Mi a max görbe?" tipId="series-max-tip">
                     {copy.maxDesc}
                   </InfoTip>

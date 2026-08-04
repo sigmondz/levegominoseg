@@ -62,7 +62,7 @@ export function HourlyChart({ hourly }: Props) {
         {data.length === 0 ? (
           <p className="chart-empty">Nincs adat a kiválasztott időszakban.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="hourlyFill" x1="0" y1="0" x2="0" y2="1">
