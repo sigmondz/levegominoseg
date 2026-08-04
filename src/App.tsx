@@ -247,6 +247,13 @@ export default function App() {
     );
   }, [series, range, trendGrain, maxWindow]);
 
+  const filteredPoints = useMemo(() => {
+    if (!series || !range) return [];
+    return series.points.filter(
+      ([t]) => t >= range.fromMs && t <= range.toMs,
+    );
+  }, [series, range]);
+
   if (error) {
     return (
       <div className="error" role="alert">
@@ -333,6 +340,9 @@ export default function App() {
           maxWindow={maxWindow}
           availableMaxWindows={availableMaxWindowOptions}
           intervalMin={series.meta.intervalMin}
+          exportPoints={filteredPoints}
+          exportFromMs={data.fromMs}
+          exportToMs={data.toMs}
           onGrainChange={setTrendGrain}
           onMaxWindowChange={setMaxWindow}
         />

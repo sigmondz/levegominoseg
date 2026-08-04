@@ -9,8 +9,9 @@ import {
   YAxis,
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
-import type { MaxWindow, TrendGrain, TrendPoint } from "../lib/types";
+import type { MaxWindow, SeriesEntry, TrendGrain, TrendPoint } from "../lib/types";
 import { GRAFANA_THRESHOLD, WHO_24H } from "../lib/aqi";
+import { downloadFilteredCsv } from "../lib/exportCsv";
 import { InfoTip } from "./InfoTip";
 
 type Props = {
@@ -21,6 +22,9 @@ type Props = {
   maxWindow: MaxWindow;
   availableMaxWindows: MaxWindow[];
   intervalMin: number;
+  exportPoints: SeriesEntry[];
+  exportFromMs: number;
+  exportToMs: number;
   onGrainChange: (grain: TrendGrain) => void;
   onMaxWindowChange: (window: MaxWindow) => void;
 };
@@ -155,6 +159,9 @@ export function DailyChart({
   maxWindow,
   availableMaxWindows: maxWindows,
   intervalMin,
+  exportPoints,
+  exportFromMs,
+  exportToMs,
   onGrainChange,
   onMaxWindowChange,
 }: Props) {
@@ -232,36 +239,61 @@ export function DailyChart({
           </div>
         </div>
         {showMax && maxWindowOptions.length > 0 ? (
-          <div className="grain-picker" role="group" aria-label="Max ablak">
-            <div className="label-with-tip">
-              <p className="period-months-label" id="max-window-filter-label">
-                Max ablak
-              </p>
-              <InfoTip label="Mi a max ablak?" tipId="max-window-tip">
-                A piros csúcsgörbe számításához: a választott hosszúságú
-                átlagok közül vesszük a legnagyobbat (pl. egy napon belül).
-                3 percnél a legmagasabb nyers mérést kapod; hosszabb ablaknál
-                a rövid kiugrások simábbak lesznek.
-              </InfoTip>
+          <div className="max-window-row" role="group" aria-label="Max ablak">
+            <div className="max-window-row-main">
+              <div className="label-with-tip">
+                <p className="period-months-label" id="max-window-filter-label">
+                  Max ablak
+                </p>
+                <InfoTip label="Mi a max ablak?" tipId="max-window-tip">
+                  A piros csúcsgörbe számításához: a választott hosszúságú
+                  átlagok közül vesszük a legnagyobbat (pl. egy napon belül).
+                  3 percnél a legmagasabb nyers mérést kapod; hosszabb ablaknál
+                  a rövid kiugrások simábbak lesznek.
+                </InfoTip>
+              </div>
+              <div
+                className="period-chips"
+                aria-labelledby="max-window-filter-label"
+              >
+                {maxWindowOptions.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    className={`period-chip${maxWindow === opt.id ? " is-active" : ""}`}
+                    aria-pressed={maxWindow === opt.id}
+                    onClick={() => onMaxWindowChange(opt.id)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div
-              className="period-chips"
-              aria-labelledby="max-window-filter-label"
+            <button
+              type="button"
+              className="export-btn"
+              disabled={exportPoints.length === 0}
+              onClick={() =>
+                downloadFilteredCsv(exportPoints, exportFromMs, exportToMs)
+              }
             >
-              {maxWindowOptions.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  className={`period-chip${maxWindow === opt.id ? " is-active" : ""}`}
-                  aria-pressed={maxWindow === opt.id}
-                  onClick={() => onMaxWindowChange(opt.id)}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+              CSV letöltés
+            </button>
           </div>
-        ) : null}
+        ) : (
+          <div className="max-window-row max-window-row--export-only">
+            <button
+              type="button"
+              className="export-btn"
+              disabled={exportPoints.length === 0}
+              onClick={() =>
+                downloadFilteredCsv(exportPoints, exportFromMs, exportToMs)
+              }
+            >
+              CSV letöltés
+            </button>
+          </div>
+        )}
       </div>
       <div className="chart-shell">
         <div className="chart-legend" aria-label="Adatsorok">
