@@ -30,6 +30,7 @@
   --font-display: "Barlow Condensed", sans-serif;
   --font-body: "IBM Plex Sans", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --content-max: 1280px;
   color-scheme: dark;
 }
 
