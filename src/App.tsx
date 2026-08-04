@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Hero } from "./components/Hero";
 import { PeriodFilter } from "./components/PeriodFilter";
 import { Stats } from "./components/Stats";
+import { WorstDays } from "./components/WorstDays";
 import { useTheme } from "./hooks/useTheme";
 import {
   availableMaxWindows,
@@ -349,6 +350,19 @@ export default function App() {
           exportToMs={data.toMs}
           onGrainChange={setTrendGrain}
           onMaxWindowChange={setMaxWindow}
+        />
+        <WorstDays
+          daily={data.daily}
+          visible={within !== "1d" && data.daily.length >= 2}
+          onSelectDay={(date) => {
+            setWithin("1d");
+            setSelectedDay(date);
+            requestAnimationFrame(() => {
+              document
+                .getElementById("napi")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+          }}
         />
         <HourlyChart hourly={data.hourlyMean} />
       </Suspense>

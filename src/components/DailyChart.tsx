@@ -269,29 +269,41 @@ export function DailyChart({
                 ))}
               </div>
             </div>
-            <button
-              type="button"
-              className="export-btn"
-              disabled={exportPoints.length === 0}
-              onClick={() =>
-                downloadFilteredCsv(exportPoints, exportFromMs, exportToMs)
-              }
-            >
-              CSV letöltés
-            </button>
+            <div className="export-btn-with-tip">
+              <button
+                type="button"
+                className="export-btn"
+                disabled={exportPoints.length === 0}
+                onClick={() =>
+                  downloadFilteredCsv(exportPoints, exportFromMs, exportToMs)
+                }
+              >
+                CSV letöltés
+              </button>
+              <InfoTip label="Mi a CSV letöltés?" tipId="csv-export-tip">
+                A kiválasztott időszak nyers, 3 perces mérési pontjait tölti le
+                (időbélyeg + PM2.5). Excelben is megnyitható.
+              </InfoTip>
+            </div>
           </div>
         ) : (
           <div className="max-window-row max-window-row--export-only">
-            <button
-              type="button"
-              className="export-btn"
-              disabled={exportPoints.length === 0}
-              onClick={() =>
-                downloadFilteredCsv(exportPoints, exportFromMs, exportToMs)
-              }
-            >
-              CSV letöltés
-            </button>
+            <div className="export-btn-with-tip">
+              <button
+                type="button"
+                className="export-btn"
+                disabled={exportPoints.length === 0}
+                onClick={() =>
+                  downloadFilteredCsv(exportPoints, exportFromMs, exportToMs)
+                }
+              >
+                CSV letöltés
+              </button>
+              <InfoTip label="Mi a CSV letöltés?" tipId="csv-export-tip">
+                A kiválasztott időszak nyers, 3 perces mérési pontjait tölti le
+                (időbélyeg + PM2.5). Excelben is megnyitható.
+              </InfoTip>
+            </div>
           </div>
         )}
       </div>

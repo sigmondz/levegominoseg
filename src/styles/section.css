@@ -75,6 +75,13 @@
   cursor: not-allowed;
 }
 
+.export-btn-with-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
 .section-kicker {
   font-family: var(--font-mono);
   font-size: 0.85rem;
