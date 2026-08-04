@@ -22,11 +22,7 @@
           var key = "levego-theme";
           var stored = localStorage.getItem(key);
           var theme =
-            stored === "light" || stored === "dark"
-              ? stored
-              : window.matchMedia("(prefers-color-scheme: light)").matches
-                ? "light"
-                : "dark";
+            stored === "light" || stored === "dark" ? stored : "dark";
           var root = document.documentElement;
           root.setAttribute("data-theme", theme);
           root.style.colorScheme = theme;

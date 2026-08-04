@@ -2,13 +2,6 @@ export type Theme = "light" | "dark";
 
 export const THEME_STORAGE_KEY = "levego-theme";
 
-export function getSystemTheme(): Theme {
-  if (typeof window === "undefined") return "dark";
-  return window.matchMedia("(prefers-color-scheme: light)").matches
-    ? "light"
-    : "dark";
-}
-
 export function resolveInitialTheme(): Theme {
   try {
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
@@ -16,7 +9,7 @@ export function resolveInitialTheme(): Theme {
   } catch {
     /* ignore */
   }
-  return getSystemTheme();
+  return "dark";
 }
 
 export function applyTheme(theme: Theme): void {
