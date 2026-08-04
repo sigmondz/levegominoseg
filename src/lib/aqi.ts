@@ -1,5 +1,7 @@
 import type { MetricId } from "./types";
 
+export type PmTone = "good" | "moderate" | "poor" | "bad";
+
 /** WHO 24h guideline (µg/m³), or null if none for this metric. */
 export function who24h(metric: string): number | null {
   switch (metric) {
@@ -12,15 +14,20 @@ export function who24h(metric: string): number | null {
   }
 }
 
-/** WHO / gyakorlati sávok (µg/m³), metrika küszöbhöz igazítva ahol van WHO. */
+/**
+ * Concentration tone (µg/m³), scaled to the metric WHO AQG when available.
+ * PM2.5: good &lt;15 · moderate &lt;25 · poor &lt;30 · bad ≥30
+ * PM10:  good &lt;45 · moderate &lt;75 · poor &lt;90 · bad ≥90
+ * PM1: same absolute bands as PM2.5 (no official WHO; practical scale).
+ */
 export function pmTone(
   value: number,
   metric: string = "PM2.5",
-): "good" | "moderate" | "poor" | "bad" {
+): PmTone {
   const who = who24h(metric) ?? WHO_24H;
   if (value < who) return "good";
   if (value < who * (25 / 15)) return "moderate";
-  if (value < GRAFANA_THRESHOLD) return "poor";
+  if (value < who * (30 / 15)) return "poor";
   return "bad";
 }
 
@@ -37,8 +44,27 @@ export function pmLabel(value: number, metric: string = "PM2.5"): string {
   }
 }
 
+/** Share of readings ≥ 80 µg/m³ (strong pollution band). */
+export function above80Tone(pct: number): PmTone {
+  if (pct <= 0) return "good";
+  if (pct < 2) return "moderate";
+  if (pct < 10) return "poor";
+  return "bad";
+}
+
+/** Days with daily mean ≥ WHO, vs calendar days in range. */
+export function daysAboveWhoTone(days: number, total: number): PmTone {
+  if (days <= 0) return "good";
+  if (total <= 0) return "bad";
+  const pct = (100 * days) / total;
+  if (pct < 10) return "moderate";
+  if (pct < 30) return "poor";
+  return "bad";
+}
+
 /** Default PM2.5 WHO 24h guideline (µg/m³). Prefer who24h(metric). */
 export const WHO_24H = 15;
+/** Strongly polluted 3-minute reading threshold (µg/m³). */
 export const GRAFANA_THRESHOLD = 80;
 
 export const METRIC_OPTIONS: { id: MetricId; label: string; slug: string }[] = [

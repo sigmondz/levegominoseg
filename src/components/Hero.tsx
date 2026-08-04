@@ -49,7 +49,8 @@ export function Hero({
           <>
             <br />
             — ez {pmLabel(data.mean, data.metric)} a WHO 24 órás irányértékhez{" "}
-            (<strong className="tone-good">
+            (
+            <strong>
               {who} {data.unit}
             </strong>
             ) képest.

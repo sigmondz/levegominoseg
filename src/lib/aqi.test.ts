@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
+  above80Tone,
+  daysAboveWhoTone,
   GRAFANA_THRESHOLD,
   parseMetricSlug,
   pmLabel,
@@ -16,7 +18,9 @@ describe("aqi", () => {
     expect(pmTone(15)).toBe("moderate");
     expect(pmTone(24.9)).toBe("moderate");
     expect(pmTone(25)).toBe("poor");
-    expect(pmTone(79.9)).toBe("poor");
+    expect(pmTone(29.9)).toBe("poor");
+    expect(pmTone(30)).toBe("bad");
+    expect(pmTone(54.5)).toBe("bad");
     expect(pmTone(80)).toBe("bad");
     expect(pmTone(200)).toBe("bad");
   });
@@ -26,13 +30,29 @@ describe("aqi", () => {
     expect(pmTone(45, "PM10")).toBe("moderate");
     expect(pmTone(74, "PM10")).toBe("moderate");
     expect(pmTone(75, "PM10")).toBe("poor");
+    expect(pmTone(89, "PM10")).toBe("poor");
+    expect(pmTone(90, "PM10")).toBe("bad");
   });
 
   test("pmLabel magyar címkék", () => {
     expect(pmLabel(10)).toBe("jó");
     expect(pmLabel(20)).toBe("mérsékelt");
-    expect(pmLabel(50)).toBe("rossz");
-    expect(pmLabel(90)).toBe("kritikus");
+    expect(pmLabel(27)).toBe("rossz");
+    expect(pmLabel(30)).toBe("kritikus");
+  });
+
+  test("above80Tone a százalék alapján", () => {
+    expect(above80Tone(0)).toBe("good");
+    expect(above80Tone(1)).toBe("moderate");
+    expect(above80Tone(5)).toBe("poor");
+    expect(above80Tone(10)).toBe("bad");
+  });
+
+  test("daysAboveWhoTone a naparány alapján", () => {
+    expect(daysAboveWhoTone(0, 31)).toBe("good");
+    expect(daysAboveWhoTone(1, 31)).toBe("moderate");
+    expect(daysAboveWhoTone(5, 31)).toBe("poor");
+    expect(daysAboveWhoTone(15, 31)).toBe("bad");
   });
 
   test("who24h metrikánként", () => {

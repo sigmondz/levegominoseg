@@ -159,12 +159,31 @@
   font-size: 0.95rem;
   font-weight: 400;
   letter-spacing: 0;
-  color: var(--text-muted);
+  color: inherit;
   margin-left: 0.25rem;
 }
 
 .stat-value-total {
   color: var(--text);
+}
+
+.stat-value-cmp {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-muted);
+}
+
+.stat-who-threshold {
+  color: var(--text);
+}
+
+.stat-who-threshold small {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: inherit;
 }
 
 .stat-hint {

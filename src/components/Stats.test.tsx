@@ -15,7 +15,7 @@ const summary = buildSummary(
 
 describe("Stats", () => {
   test("összefoglaló statisztikák megjelennek", () => {
-    const { getByText } = render(<Stats data={summary} />);
+    const { getByText, getAllByText } = render(<Stats data={summary} />);
 
     expect(getByText("A kiválasztott időszak számokban")).toBeInTheDocument();
     expect(getByText("Átlag")).toBeInTheDocument();
@@ -23,6 +23,12 @@ describe("Stats", () => {
     expect(getByText("Maximum")).toBeInTheDocument();
     expect(getByText("≥ 80 µg/m³")).toBeInTheDocument();
     expect(getByText(`${summary.mean.toFixed(1)}`)).toBeInTheDocument();
+    expect(
+      getAllByText((_, el) =>
+        el?.classList.contains("stat-who-threshold") === true &&
+        (el.textContent?.trim().startsWith("15") ?? false),
+      ),
+    ).toHaveLength(2);
     expect(getByText("WHO érték felett")).toBeInTheDocument();
     expect(document.querySelector(".stat--featured")).toBeTruthy();
     expect(
@@ -35,6 +41,23 @@ describe("Stats", () => {
     ).toBeInTheDocument();
     const cards = document.querySelectorAll(".stat");
     expect(cards[0]?.textContent).toContain("WHO érték felett");
+  });
+
+  test("0% a 80 felett zöld, nem piros", () => {
+    const clean = {
+      ...summary,
+      above80pct: 0,
+      max: 10,
+      mean: 5,
+      p50: 4,
+      aboveWhoPct: 0,
+      daysAboveWho: 0,
+    };
+    const { getByText } = render(<Stats data={clean} />);
+    const label = getByText("≥ 80 µg/m³");
+    const card = label.closest(".stat");
+    expect(card?.querySelector(".tone-good")).toBeTruthy();
+    expect(card?.querySelector(".tone-bad")).toBeNull();
   });
 
   test("egynapos tartománynál nincs WHO feletti napok kártya", () => {
@@ -73,8 +96,14 @@ describe("Stats", () => {
       "day",
       "3m",
     );
-    const { getByText } = render(<Stats data={pm10} />);
+    const { getByText, getAllByText } = render(<Stats data={pm10} />);
     expect(getByText(`${pm10.aboveWhoPct}% a WHO 45 felett`)).toBeInTheDocument();
+    expect(
+      getAllByText((_, el) =>
+        el?.classList.contains("stat-who-threshold") === true &&
+        (el.textContent?.trim().startsWith("45") ?? false),
+      ),
+    ).toHaveLength(2);
     expect(getByText("WHO érték felett")).toBeInTheDocument();
   });
 });
