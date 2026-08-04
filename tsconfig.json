@@ -26,6 +26,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["src", "bun-env.d.ts"],
+  "include": ["src", "bun-env.d.ts", "src/**/*.test.ts", "src/**/*.test.tsx"],
   "exclude": ["dist", "node_modules"]
 }
