@@ -93,14 +93,18 @@ export function Stats({ data }: Props) {
   return (
     <section className="section" id="osszefoglalo" aria-labelledby="stats-title">
       <div className="section-head">
-        <h2 className="section-title" id="stats-title">
-          A kiválasztott időszak számokban
-        </h2>
-        <p className="section-desc">
-          {data.valid.toLocaleString("hu-HU")} érvényes 3 perces mérés
-          {data.empty > 0 ? `, kb. ${data.empty} hiányzó pont` : ""}. Időablak:{" "}
-          {data.from.slice(0, 16)} → {data.to.slice(0, 16)}.
-        </p>
+        <div className="label-with-tip">
+          <h2 className="section-title" id="stats-title">
+            A kiválasztott időszak számokban
+          </h2>
+          <InfoTip label="Miről szól az összefoglaló?" tipId="stats-tip">
+            Időablak: {data.from.slice(0, 16)} → {data.to.slice(0, 16)}. Ebben{" "}
+            {data.valid.toLocaleString("hu-HU")} érvényes 3 perces mérés van.
+            {data.empty > 0
+              ? ` Ha a szenzor folyamatosan, 3 percenként mért volna, kb. ${data.empty.toLocaleString("hu-HU")} mintapont hiányzik (szünet, kimaradás vagy üres érték).`
+              : ""}
+          </InfoTip>
+        </div>
       </div>
       <div className={`stats${showDaysAboveWho ? " stats--with-days" : ""}`}>
         {showDaysAboveWho ? (

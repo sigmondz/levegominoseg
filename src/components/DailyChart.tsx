@@ -314,10 +314,14 @@ export function DailyChart({
   return (
     <section className="section" id="napi" aria-labelledby="daily-title">
       <div className="section-head">
-        <h2 className="section-title" id="daily-title">
-          {copy.title}
-        </h2>
-        <p className="section-desc">{copy.desc}</p>
+        <div className="label-with-tip">
+          <h2 className="section-title" id="daily-title">
+            {copy.title}
+          </h2>
+          <InfoTip label="Miről szól ez a grafikon?" tipId="daily-chart-tip">
+            {copy.desc}
+          </InfoTip>
+        </div>
         <div className="grain-picker" role="group" aria-label="Adatsűrűség">
           <div className="label-with-tip">
             <p className="period-months-label" id="grain-filter-label">

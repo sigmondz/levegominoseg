@@ -30,11 +30,13 @@
 }
 
 .info-tip-bubble {
+  --tip-shift: 0px;
   position: absolute;
   left: 50%;
   bottom: calc(100% + 0.45rem);
   z-index: 20;
-  width: min(20rem, 78vw);
+  width: min(20rem, calc(100vw - 1.5rem));
+  max-width: calc(100vw - 1.5rem);
   padding: 0.75rem 0.85rem;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -48,13 +50,17 @@
   line-height: 1.5;
   text-align: left;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% + var(--tip-shift)));
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   transition:
     opacity 0.15s ease,
     visibility 0.15s ease;
+}
+
+.info-tip--in-card .info-tip-bubble {
+  width: min(16rem, calc(100vw - 1.5rem));
 }
 
 .info-tip:hover .info-tip-bubble,
@@ -71,8 +77,4 @@
 .stat:has(.info-tip:hover),
 .stat:has(.info-tip:focus-visible) {
   z-index: 5;
-}
-
-.info-tip--in-card .info-tip-bubble {
-  width: min(16rem, 72vw);
 }

@@ -14,29 +14,29 @@ export function MetricFilter({ metric, onMetricChange }: Props) {
       id="adatsor"
       aria-labelledby="metric-title"
     >
-      <h2 className="section-title" id="metric-title">
-        Adatsor
-      </h2>
-      <div className="period-chips--with-tip">
-        <div className="period-chips" role="group" aria-label="Adatsor">
-          {METRIC_OPTIONS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`period-chip${metric === item.id ? " is-active" : ""}`}
-              aria-pressed={metric === item.id}
-              onClick={() => onMetricChange(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
+      <div className="label-with-tip">
+        <h2 className="section-title" id="metric-title">
+          Adatsor
+        </h2>
         <InfoTip label="Mit jelent a PM?" tipId="metric-pm-tip">
           A PM (Particulate Matter) a levegőben szálló szilárd részecskéket
           jelenti. A szám a részecske átmérőjét mutatja mikrométerben: PM1 ≤ 1
           µm, PM2.5 ≤ 2,5 µm, PM10 ≤ 10 µm. Minél kisebb a részecske, annál
           mélyebbre jut a légutakba.
         </InfoTip>
+      </div>
+      <div className="period-chips" role="group" aria-label="Adatsor">
+        {METRIC_OPTIONS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={`period-chip${metric === item.id ? " is-active" : ""}`}
+            aria-pressed={metric === item.id}
+            onClick={() => onMetricChange(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
     </section>
   );

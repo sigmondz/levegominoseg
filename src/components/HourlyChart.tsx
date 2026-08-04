@@ -45,17 +45,13 @@ export function HourlyChart({ hourly }: Props) {
             Óránkénti profil
           </h2>
           <InfoTip label="Mi az óránkénti profil?" tipId="hourly-tip">
-            Nem egyetlen nap idővonala, hanem a napszakok tipikus mintája. Minden
-            órához (0–23) összefoglaljuk a kiválasztott időszak összes olyan
-            mérését, ami abban az órában készült, és ezek átlagát rajzoljuk.
-            Így látszik például, reggel vagy este szokott-e magasabb lenni a
-            PM2.5 — akár egy hét, akár egy hónap alapján.
+            A kiválasztott időszak napjainak óránkénti átlaga (0–23). Nem egyetlen
+            nap idővonala, hanem a napszakok tipikus mintája: minden órához
+            összefoglaljuk az összes olyan mérést, ami abban az órában készült.
+            Így látszik, reggel vagy este szokott-e magasabb lenni a terhelés —
+            akár egy nap, akár egy hónap alapján.
           </InfoTip>
         </div>
-        <p className="section-desc">
-          A kiválasztott időszak napjainak óránkénti átlaga (0–23). Rövid
-          tartománynál is ugyanígy a napi ritmust mutatja.
-        </p>
       </div>
       <div className="chart-shell">
         {data.length === 0 ? (

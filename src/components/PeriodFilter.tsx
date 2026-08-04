@@ -13,6 +13,7 @@ import {
   toDateInputValue,
 } from "../lib/aggregate";
 import { DatePicker } from "./DatePicker";
+import { InfoTip } from "./InfoTip";
 
 const WITHIN_PRESETS: { id: WithinMonthScope; label: string }[] = [
   { id: "month", label: "Összes nap" },
@@ -100,9 +101,18 @@ export function PeriodFilter({
       id="idoszak"
       aria-labelledby="period-title"
     >
-      <h2 className="section-title" id="period-title">
-        Időszak
-      </h2>
+      <div className="label-with-tip">
+        <h2 className="section-title" id="period-title">
+          Időszak
+        </h2>
+        <InfoTip label="Hogyan működik az időszakválasztó?" tipId="period-tip">
+          Először a nagyobb tartományt választod (negyedév vagy félév), majd
+          azon belül egy hónapot vagy az összes hónapot. Alatta tovább
+          szűkítheted: teljes tartomány, egy nap, egy hét, két hét, vagy
+          egyéni dátumtól–ig. A grafikonok és a számok mindig a kiválasztott
+          időablakra vonatkoznak.
+        </InfoTip>
+      </div>
 
       {parentPresets.length > 0 ? (
         <div
