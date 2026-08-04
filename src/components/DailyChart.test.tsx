@@ -14,24 +14,25 @@ const summary = buildSummary(
   "3m",
 );
 
+const baseProps = {
+  trend: summary.trend,
+  mean: summary.mean,
+  metric: "PM2.5",
+  grain: "day" as const,
+  availableGrains: ["hour", "day"] as ("hour" | "day")[],
+  maxWindow: "3m" as const,
+  availableMaxWindows: ["3m", "6m"] as ("3m" | "6m")[],
+  intervalMin: 3,
+  exportPoints: TEST_POINTS.slice(0, 10),
+  exportFromMs: summary.fromMs,
+  exportToMs: summary.toMs,
+  onGrainChange: () => {},
+  onMaxWindowChange: () => {},
+};
+
 describe("DailyChart", () => {
   test("grafikon és legendák megjelennek", () => {
-    const { getByText, getByRole } = render(
-      <DailyChart
-        trend={summary.trend}
-        mean={summary.mean}
-        grain="day"
-        availableGrains={["hour", "day"]}
-        maxWindow="3m"
-        availableMaxWindows={["3m", "6m"]}
-        intervalMin={3}
-        exportPoints={TEST_POINTS.slice(0, 10)}
-        exportFromMs={summary.fromMs}
-        exportToMs={summary.toMs}
-        onGrainChange={() => {}}
-        onMaxWindowChange={() => {}}
-      />,
-    );
+    const { getByText, getByRole } = render(<DailyChart {...baseProps} />);
 
     expect(getByText("Napi átlag és csúcs")).toBeInTheDocument();
     expect(document.querySelector(".recharts-responsive-container")).toBeTruthy();
@@ -54,25 +55,27 @@ describe("DailyChart", () => {
     ).toBeInTheDocument();
   });
 
+  test("PM10-nél WHO 45 jelenik meg", () => {
+    const { getByText } = render(
+      <DailyChart {...baseProps} metric="PM10" />,
+    );
+    expect(getByText("WHO 24 órás irányérték")).toBeInTheDocument();
+    expect(getByText("45 µg/m³")).toBeInTheDocument();
+  });
+
+  test("PM1-nél nincs WHO irányérték", () => {
+    const { queryByText } = render(
+      <DailyChart {...baseProps} metric="PM1" />,
+    );
+    expect(queryByText("WHO 24 órás irányérték")).toBeNull();
+  });
+
   test("adatsűrűség gombok váltanak", async () => {
     const user = userEvent.setup();
     const onGrainChange = mock(() => {});
 
     const { getByRole } = render(
-      <DailyChart
-        trend={summary.trend}
-        mean={summary.mean}
-        grain="day"
-        availableGrains={["hour", "day"]}
-        maxWindow="3m"
-        availableMaxWindows={["3m", "6m"]}
-        intervalMin={3}
-        exportPoints={TEST_POINTS.slice(0, 10)}
-        exportFromMs={summary.fromMs}
-        exportToMs={summary.toMs}
-        onGrainChange={onGrainChange}
-        onMaxWindowChange={() => {}}
-      />,
+      <DailyChart {...baseProps} onGrainChange={onGrainChange} />,
     );
 
     const grainGroup = getByRole("group", { name: "Adatsűrűség" });
@@ -86,17 +89,9 @@ describe("DailyChart", () => {
 
     const { getByRole } = render(
       <DailyChart
-        trend={summary.trend}
-        mean={summary.mean}
-        grain="day"
+        {...baseProps}
         availableGrains={["day"]}
-        maxWindow="3m"
         availableMaxWindows={["3m", "6m", "15m"]}
-        intervalMin={3}
-        exportPoints={TEST_POINTS.slice(0, 10)}
-        exportFromMs={summary.fromMs}
-        exportToMs={summary.toMs}
-        onGrainChange={() => {}}
         onMaxWindowChange={onMaxWindowChange}
       />,
     );
@@ -111,18 +106,10 @@ describe("DailyChart", () => {
 
     const { getByRole } = render(
       <DailyChart
-        trend={summary.trend}
-        mean={summary.mean}
-        grain="day"
+        {...baseProps}
         availableGrains={["day"]}
-        maxWindow="3m"
         availableMaxWindows={["3m"]}
-        intervalMin={3}
         exportPoints={TEST_POINTS.slice(0, 5)}
-        exportFromMs={summary.fromMs}
-        exportToMs={summary.toMs}
-        onGrainChange={() => {}}
-        onMaxWindowChange={() => {}}
       />,
     );
 
@@ -134,18 +121,13 @@ describe("DailyChart", () => {
   test("üres trend esetén üzenet", () => {
     const { getByText, getByRole } = render(
       <DailyChart
+        {...baseProps}
         trend={[]}
         mean={0}
         grain="raw"
         availableGrains={["raw"]}
-        maxWindow="3m"
         availableMaxWindows={[]}
-        intervalMin={3}
         exportPoints={[]}
-        exportFromMs={summary.fromMs}
-        exportToMs={summary.toMs}
-        onGrainChange={() => {}}
-        onMaxWindowChange={() => {}}
       />,
     );
 

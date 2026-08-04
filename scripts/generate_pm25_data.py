@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Generate public/data/series.json and summary.json from pm25-sps30-2026.csv."""
+"""Generate public/data/series-pm{1,25,10}.json (and series.json PM2.5 alias) from CSV exports."""
 from __future__ import annotations
 
 import csv
 import json
 import math
 import re
+import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -14,6 +15,15 @@ CHIP_ID = "esp8266-2702201"
 INTERVAL_MIN = 3
 TIME_FMT = "%Y-%m-%d %H:%M:%S"
 VALUE_RE = re.compile(r"([\d.]+)")
+# Incomplete month — exclude from generated series until enough data exists.
+EXCLUDE_MONTH_PREFIXES = ("2026-08",)
+
+# (csv filename, output series filename)
+SERIES_SOURCES = [
+    ("pm1-sps30-2026.csv", "series-pm1.json"),
+    ("pm25-sps30-2026.csv", "series-pm25.json"),
+    ("pm10-sps30-2026.csv", "series-pm10.json"),
+]
 
 
 def parse_value(raw: str | None) -> float | None:
@@ -169,21 +179,19 @@ def build_summary(points: list[list], meta: dict, from_ms: int, to_ms: int) -> d
     }
 
 
-def main() -> int:
-    root = Path(__file__).resolve().parents[1]
-    csv_path = root / "public/data/pm25-sps30-2026.csv"
-    series_path = root / "public/data/series.json"
-    summary_path = root / "public/data/summary.json"
+def load_points(csv_path: Path) -> tuple[list[list], str, str]:
     points: list[list] = []
     with csv_path.open(newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         if not reader.fieldnames:
-            raise SystemExit("CSV has no header")
+            raise SystemExit(f"CSV has no header: {csv_path}")
         value_col = detect_value_column(list(reader.fieldnames))
         sensor, metric = parse_sensor_metric(value_col)
         for row in reader:
             t_raw = (row.get("Time") or "").strip()
             if not t_raw:
+                continue
+            if t_raw.startswith(EXCLUDE_MONTH_PREFIXES):
                 continue
             ts_ms = int(datetime.strptime(t_raw, TIME_FMT).timestamp() * 1000)
             val = parse_value(row.get(value_col))
@@ -191,7 +199,11 @@ def main() -> int:
                 continue
             points.append([ts_ms, val])
     if not points:
-        raise SystemExit("No valid points")
+        raise SystemExit(f"No valid points: {csv_path}")
+    return points, sensor, metric
+
+
+def write_series(series_path: Path, points: list[list], sensor: str, metric: str) -> dict:
     from_ms, to_ms = points[0][0], points[-1][0]
     meta = {
         "sensor": sensor,
@@ -206,11 +218,49 @@ def main() -> int:
         json.dumps({"meta": meta, "points": points}, ensure_ascii=False, separators=(",", ":")),
         encoding="utf-8",
     )
+    print(f"{series_path.name}: points={len(points)} bytes={series_path.stat().st_size}")
+    return meta
+
+
+def main() -> int:
+    root = Path(__file__).resolve().parents[1]
+    data_dir = root / "public" / "data"
+    pm25_points: list[list] | None = None
+    pm25_meta: dict | None = None
+
+    for csv_name, series_name in SERIES_SOURCES:
+        csv_path = data_dir / csv_name
+        series_path = data_dir / series_name
+        points, sensor, metric = load_points(csv_path)
+        meta = write_series(series_path, points, sensor, metric)
+        if series_name == "series-pm25.json":
+            pm25_points = points
+            pm25_meta = meta
+
+    if pm25_points is None or pm25_meta is None:
+        raise SystemExit("PM2.5 series was not generated")
+
+    # Backward-compatible alias
+    alias_path = data_dir / "series.json"
+    shutil.copyfile(data_dir / "series-pm25.json", alias_path)
+    print(f"series.json: alias of series-pm25.json")
+
+    summary_path = data_dir / "summary.json"
     summary_path.write_text(
-        json.dumps(build_summary(points, meta, from_ms, to_ms), ensure_ascii=False, indent=2) + "\n",
+        json.dumps(
+            build_summary(
+                pm25_points,
+                pm25_meta,
+                pm25_meta["fromMs"],
+                pm25_meta["toMs"],
+            ),
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
         encoding="utf-8",
     )
-    print(f"points={len(points)} series_bytes={series_path.stat().st_size}")
+    print(f"summary.json: bytes={summary_path.stat().st_size}")
     return 0
 
 

@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Hero } from "./components/Hero";
+import { MetricFilter } from "./components/MetricFilter";
 import { PeriodFilter } from "./components/PeriodFilter";
 import { Stats } from "./components/Stats";
 import { WorstDays } from "./components/WorstDays";
@@ -9,6 +10,7 @@ import {
   availableTrendGrains,
   buildSummary,
   listDaysInMonth,
+  listMonthPresets,
   listWindowsInMonth,
   monthBounds,
   resolveMaxWindow,
@@ -17,8 +19,15 @@ import {
   formatDateTime,
   toDateInputValue,
 } from "./lib/aggregate";
+import {
+  csvPath,
+  DEFAULT_METRIC,
+  parseMetricSlug,
+  seriesUrl,
+} from "./lib/aqi";
 import type {
   MaxWindow,
+  MetricId,
   MonthKey,
   SeriesFile,
   TrendGrain,
@@ -65,6 +74,7 @@ function defaultWindow(
 function applyViewState(
   view: ViewState,
   setters: {
+    setMetric: (v: MetricId) => void;
     setMonthKey: (v: MonthKey) => void;
     setWithin: (v: WithinMonthScope) => void;
     setSelectedDay: (v: string) => void;
@@ -75,6 +85,7 @@ function applyViewState(
     setMaxWindow: (v: MaxWindow) => void;
   },
 ) {
+  setters.setMetric(view.metric);
   setters.setMonthKey(view.monthKey);
   setters.setWithin(view.within);
   setters.setSelectedDay(view.selectedDay);
@@ -85,8 +96,20 @@ function applyViewState(
   setters.setMaxWindow(view.maxWindow);
 }
 
+function initialMetricFromUrl(): MetricId {
+  try {
+    const params = new URLSearchParams(
+      readSearch().startsWith("?") ? readSearch().slice(1) : readSearch(),
+    );
+    return parseMetricSlug(params.get("metric")) ?? DEFAULT_METRIC;
+  } catch {
+    return DEFAULT_METRIC;
+  }
+}
+
 export default function App() {
   const { theme, toggleTheme } = useTheme();
+  const [metric, setMetric] = useState<MetricId>(initialMetricFromUrl);
   const [series, setSeries] = useState<SeriesFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [monthKey, setMonthKey] = useState<MonthKey | null>(null);
@@ -97,22 +120,34 @@ export default function App() {
   const [customTo, setCustomTo] = useState("");
   const [trendGrain, setTrendGrain] = useState<TrendGrain>("day");
   const [maxWindow, setMaxWindow] = useState<MaxWindow>("3m");
+  const seriesCache = useRef(new Map<MetricId, SeriesFile>());
+  const appliedInitialView = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
-        const res = await fetch("/data/series.json");
-        if (!res.ok) {
-          throw new Error(`Nem sikerült betölteni az adatot (${res.status})`);
+        let json = seriesCache.current.get(metric);
+        if (!json) {
+          const res = await fetch(seriesUrl(metric));
+          if (!res.ok) {
+            throw new Error(`Nem sikerült betölteni az adatot (${res.status})`);
+          }
+          json = (await res.json()) as SeriesFile;
+          seriesCache.current.set(metric, json);
         }
-        const json = (await res.json()) as SeriesFile;
-        if (!cancelled) {
+        if (cancelled) return;
+
+        setSeries(json);
+        setError(null);
+
+        if (!appliedInitialView.current) {
+          appliedInitialView.current = true;
           const defaults = buildDefaultViewState(json.meta);
           const view = parseViewState(readSearch(), json.meta, defaults);
-          setSeries(json);
           applyViewState(view, {
+            setMetric,
             setMonthKey,
             setWithin,
             setSelectedDay,
@@ -122,7 +157,19 @@ export default function App() {
             setTrendGrain,
             setMaxWindow,
           });
+          return;
         }
+
+        const months = listMonthPresets(json.meta.fromMs, json.meta.toMs);
+        const monthIds = new Set(months.map((m) => m.id));
+        setMonthKey((current) => {
+          if (current && monthIds.has(current)) return current;
+          return (
+            months.find((m) => m.id.endsWith("-01"))?.id ??
+            months[0]?.id ??
+            current
+          );
+        });
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Ismeretlen hiba");
@@ -134,7 +181,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [metric]);
 
   useEffect(() => {
     if (!series) return;
@@ -143,6 +190,7 @@ export default function App() {
       const defaults = buildDefaultViewState(series!.meta);
       const view = parseViewState(readSearch(), series!.meta, defaults);
       applyViewState(view, {
+        setMetric,
         setMonthKey,
         setWithin,
         setSelectedDay,
@@ -204,6 +252,7 @@ export default function App() {
   useEffect(() => {
     if (!series || !monthKey || !urlDefaults) return;
     const state: ViewState = {
+      metric,
       monthKey,
       within,
       selectedDay,
@@ -216,6 +265,7 @@ export default function App() {
     writeSearch(buildSearchParams(state, urlDefaults));
   }, [
     series,
+    metric,
     monthKey,
     within,
     selectedDay,
@@ -280,6 +330,7 @@ export default function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
       />
+      <MetricFilter metric={metric} onMetricChange={setMetric} />
       <PeriodFilter
         monthKey={monthKey}
         within={within}
@@ -340,6 +391,7 @@ export default function App() {
         <DailyChart
           trend={data.trend}
           mean={data.mean}
+          metric={data.metric}
           grain={trendGrain}
           availableGrains={availableGrains}
           maxWindow={maxWindow}
@@ -353,6 +405,7 @@ export default function App() {
         />
         <WorstDays
           daily={data.daily}
+          metric={data.metric}
           visible={within !== "1d" && data.daily.length >= 2}
           onSelectDay={(date) => {
             setWithin("1d");
@@ -378,7 +431,7 @@ export default function App() {
           mérés: {lastMeasurement} · Nem élő adat
         </span>
         <span>
-          Nyers fájl: <code>/data/pm25-sps30-2026.csv</code>
+          Nyers fájl: <code>{csvPath(metric)}</code>
         </span>
       </footer>
     </div>

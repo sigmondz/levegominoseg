@@ -13,6 +13,7 @@ describe("urlState", () => {
     expect(defaults.within).toBe("month");
     expect(defaults.trendGrain).toBe("day");
     expect(defaults.maxWindow).toBe("3m");
+    expect(defaults.metric).toBe("PM2.5");
     expect(defaults.monthKey).toMatch(/^\d{4}-\d{2}$/);
   });
 
@@ -21,6 +22,7 @@ describe("urlState", () => {
     expect(view.monthKey).toBe(defaults.monthKey);
     expect(view.within).toBe("month");
     expect(view.trendGrain).toBe("day");
+    expect(view.metric).toBe("PM2.5");
   });
 
   test("parseViewState hónap és scope paraméterek", () => {
@@ -34,6 +36,17 @@ describe("urlState", () => {
     expect(view.selectedDay).toBe("2026-02-05");
     expect(view.trendGrain).toBe("hour");
     expect(view.maxWindow).toBe("15m");
+  });
+
+  test("parseViewState metric paraméter", () => {
+    const view = parseViewState("?metric=pm10", TEST_META, defaults);
+    expect(view.metric).toBe("PM10");
+
+    const pm1 = parseViewState("?metric=pm1", TEST_META, defaults);
+    expect(pm1.metric).toBe("PM1");
+
+    const invalid = parseViewState("?metric=pm99", TEST_META, defaults);
+    expect(invalid.metric).toBe("PM2.5");
   });
 
   test("parseViewState custom tartomány", () => {
@@ -63,6 +76,7 @@ describe("urlState", () => {
 
     const custom = {
       ...defaults,
+      metric: "PM1" as const,
       monthKey: "2026-02" as const,
       within: "7d" as const,
       windowStart: "2026-02-01",
@@ -70,6 +84,7 @@ describe("urlState", () => {
       maxWindow: "15m" as const,
     };
     const built = buildSearchParams(custom, defaults);
+    expect(built.get("metric")).toBe("pm1");
     expect(built.get("h")).toBe("2026-02");
     expect(built.get("w")).toBe("7d");
     expect(built.get("d")).toBe("2026-02-01");

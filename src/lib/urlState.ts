@@ -10,15 +10,22 @@ import {
   toDateInputValue,
   toMonthKey,
 } from "./aggregate";
+import {
+  DEFAULT_METRIC,
+  metricSlug,
+  parseMetricSlug,
+} from "./aqi";
 import type {
   DatasetMeta,
   MaxWindow,
+  MetricId,
   MonthKey,
   TrendGrain,
   WithinMonthScope,
 } from "./types";
 
 export type ViewState = {
+  metric: MetricId;
   monthKey: MonthKey;
   within: WithinMonthScope;
   selectedDay: string;
@@ -104,6 +111,7 @@ export function buildDefaultViewState(meta: DatasetMeta): ViewState {
   const monthKey = defaultMonthKey(meta.fromMs, meta.toMs);
   const bounds = monthBounds(monthKey, meta.fromMs, meta.toMs);
   return {
+    metric: DEFAULT_METRIC,
     monthKey,
     within: "month",
     selectedDay: defaultDay(monthKey, meta.fromMs, meta.toMs),
@@ -125,6 +133,8 @@ export function parseViewState(
   );
   const months = listMonthPresets(meta.fromMs, meta.toMs);
   const monthIds = new Set(months.map((m) => m.id));
+
+  const metric = parseMetricSlug(params.get("metric")) ?? defaults.metric;
 
   const h = params.get("h");
   const monthKey =
@@ -208,6 +218,7 @@ export function parseViewState(
   );
 
   return {
+    metric,
     monthKey,
     within,
     selectedDay,
@@ -226,6 +237,9 @@ export function buildSearchParams(
 ): URLSearchParams {
   const params = new URLSearchParams();
 
+  if (state.metric !== defaults.metric) {
+    params.set("metric", metricSlug(state.metric));
+  }
   if (state.monthKey !== defaults.monthKey) {
     params.set("h", state.monthKey);
   }

@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
 import type { MaxWindow, SeriesEntry, TrendGrain, TrendPoint } from "../lib/types";
-import { GRAFANA_THRESHOLD, pmTone, WHO_24H } from "../lib/aqi";
+import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
 import { downloadFilteredCsv } from "../lib/exportCsv";
 import { IconActionButton } from "./IconActionButton";
 import { InfoTip } from "./InfoTip";
@@ -19,6 +19,7 @@ import { ShareView } from "./ShareView";
 type Props = {
   trend: TrendPoint[];
   mean: number;
+  metric: string;
   grain: TrendGrain;
   availableGrains: TrendGrain[];
   maxWindow: MaxWindow;
@@ -205,6 +206,7 @@ function grainCopy(
 export function DailyChart({
   trend,
   mean,
+  metric,
   grain,
   availableGrains,
   maxWindow,
@@ -218,6 +220,7 @@ export function DailyChart({
 }: Props) {
   const colors = useChartColors();
   const copy = grainCopy(grain, intervalMin, maxWindow);
+  const who = who24h(metric);
   const showMax = grain !== "raw";
   const animate = trend.length <= 400;
 
@@ -395,12 +398,14 @@ export function DailyChart({
                 ]}
                 labelFormatter={(label) => String(label)}
               />
-              <ReferenceLine
-                y={WHO_24H}
-                stroke={colors.good}
-                strokeDasharray="4 4"
-                strokeWidth={1.5}
-              />
+              {who != null ? (
+                <ReferenceLine
+                  y={who}
+                  stroke={colors.good}
+                  strokeDasharray="4 4"
+                  strokeWidth={1.5}
+                />
+              ) : null}
               <ReferenceLine
                 y={mean}
                 stroke={colors.poor}
@@ -484,28 +489,30 @@ export function DailyChart({
         <div className="threshold-legend" aria-label="Határértékek jelmagyarázata">
           <p className="threshold-legend-title">Határértékek</p>
           <ul className="threshold-legend-list">
-            <li>
-              <span
-                className="threshold-line threshold-line--who"
-                style={{ borderTopColor: colors.good }}
-                aria-hidden
-              />
-              <div className="threshold-legend-item">
-                <div className="label-with-tip">
-                  <strong>WHO 24 órás irányérték</strong>
-                  <InfoTip label="Mi a WHO irányérték?" tipId="who-threshold-tip">
-                    A WHO 2021-es PM2.5 irányelve: a 24 órás átlag ne lépje túl a{" "}
-                    {WHO_24H} µg/m³-t. Nem jogszabályi határ, hanem egészségügyi
-                    ajánlás; efelett a rövid távú terhelés már növeli a
-                    légzőszervi és szív-érrendszeri kockázatot. A grafikonon a
-                    zöld szaggatott vonal jelöli.
-                  </InfoTip>
+            {who != null ? (
+              <li>
+                <span
+                  className="threshold-line threshold-line--who"
+                  style={{ borderTopColor: colors.good }}
+                  aria-hidden
+                />
+                <div className="threshold-legend-item">
+                  <div className="label-with-tip">
+                    <strong>WHO 24 órás irányérték</strong>
+                    <InfoTip label="Mi a WHO irányérték?" tipId="who-threshold-tip">
+                      A WHO 2021-es {metric} irányelve: a 24 órás átlag ne lépje
+                      túl a {who} µg/m³-t. Nem jogszabályi határ, hanem
+                      egészségügyi ajánlás; efelett a rövid távú terhelés már
+                      növeli a légzőszervi és szív-érrendszeri kockázatot. A
+                      grafikonon a zöld szaggatott vonal jelöli.
+                    </InfoTip>
+                  </div>
+                  <span className="threshold-legend-value tone-good">
+                    {who} µg/m³
+                  </span>
                 </div>
-                <span className="threshold-legend-value tone-good">
-                  {WHO_24H} µg/m³
-                </span>
-              </div>
-            </li>
+              </li>
+            ) : null}
             <li>
               <span
                 className="threshold-line threshold-line--mean"
@@ -526,7 +533,9 @@ export function DailyChart({
                     időszakban. A grafikonon a narancssárga szaggatott vonal jelöli.
                   </InfoTip>
                 </div>
-                <span className={`threshold-legend-value tone-${pmTone(mean)}`}>
+                <span
+                  className={`threshold-legend-value tone-${pmTone(mean, metric)}`}
+                >
                   {mean.toFixed(1)} µg/m³
                 </span>
               </div>
@@ -545,9 +554,11 @@ export function DailyChart({
                     tipId="alert-threshold-tip"
                   >
                     Efelett a levegő erősen szennyezettnek számít ezen az
-                    oldalon. Nem hivatalos határ, hanem helyi riasztási szint —
-                    többszöröse a WHO irányértéknek. A grafikonon a piros
-                    szaggatott vonal jelöli.
+                    oldalon. Nem hivatalos határ, hanem helyi riasztási szint
+                    {who != null
+                      ? " — többszöröse a WHO irányértéknek"
+                      : ""}
+                    . A grafikonon a piros szaggatott vonal jelöli.
                   </InfoTip>
                 </div>
                 <span className="threshold-legend-value tone-bad">

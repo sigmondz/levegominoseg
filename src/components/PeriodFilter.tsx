@@ -78,48 +78,40 @@ export function PeriodFilter({
   );
 
   return (
-    <section className="section period" id="idoszak" aria-labelledby="period-title">
-      <div className="section-head">
-        <p className="section-kicker">Szűrés</p>
-        <h2 className="section-title" id="period-title">
-          Időszak
-        </h2>
-      </div>
+    <section
+      className="section period period--compact"
+      id="idoszak"
+      aria-labelledby="period-title"
+    >
+      <h2 className="section-title" id="period-title">
+        Időszak
+      </h2>
 
       {monthPresets.length > 0 ? (
-        <div className="period-months">
-          <p className="period-months-label" id="month-filter-label">
-            Hónap
-          </p>
-
-          <div
-            className="period-chips period-chips--months"
-            role="group"
-            aria-labelledby="month-filter-label"
-          >
-            {monthPresets.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={`period-chip period-chip--month${monthKey === item.id ? " is-active" : ""}`}
-                aria-pressed={monthKey === item.id}
-                onClick={() => onMonthChange(item.id)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+        <div
+          className="period-chips period-chips--months"
+          role="group"
+          aria-label="Hónap"
+        >
+          {monthPresets.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`period-chip period-chip--month${monthKey === item.id ? " is-active" : ""}`}
+              aria-pressed={monthKey === item.id}
+              onClick={() => onMonthChange(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       ) : null}
 
       <div className="period-range">
-        <p className="period-months-label" id="range-filter-label">
-          A hónapon belül
-        </p>
         <div
           className="period-chips"
           role="group"
-          aria-labelledby="range-filter-label"
+          aria-label="Időszak a hónapon belül"
         >
           {WITHIN_PRESETS.map((item) => (
             <button
@@ -137,13 +129,10 @@ export function PeriodFilter({
 
       {within === "1d" ? (
         <div className="period-subchoice">
-          <p className="period-months-label" id="day-filter-label">
-            Nap
-          </p>
           <div
             className="period-chips period-chips--days"
             role="group"
-            aria-labelledby="day-filter-label"
+            aria-label="Nap"
           >
             {days.map((item) => (
               <button
@@ -162,14 +151,7 @@ export function PeriodFilter({
 
       {within === "7d" ? (
         <div className="period-subchoice">
-          <p className="period-months-label" id="week-filter-label">
-            Hét
-          </p>
-          <div
-            className="period-chips"
-            role="group"
-            aria-labelledby="week-filter-label"
-          >
+          <div className="period-chips" role="group" aria-label="Hét">
             {weekWindows.map((item) => (
               <button
                 key={item.id}
@@ -187,14 +169,7 @@ export function PeriodFilter({
 
       {within === "14d" ? (
         <div className="period-subchoice">
-          <p className="period-months-label" id="twoweek-filter-label">
-            2 hét
-          </p>
-          <div
-            className="period-chips"
-            role="group"
-            aria-labelledby="twoweek-filter-label"
-          >
+          <div className="period-chips" role="group" aria-label="2 hét">
             {twoWeekWindows.map((item) => (
               <button
                 key={item.id}

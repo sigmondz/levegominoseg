@@ -6,6 +6,7 @@ import { InfoTip } from "./InfoTip";
 
 type Props = {
   daily: DailyPoint[];
+  metric?: string;
   visible: boolean;
   onSelectDay: (date: string) => void;
 };
@@ -17,7 +18,7 @@ const RANK_OPTIONS: { id: WorstRankBy; label: string }[] = [
 
 const LIMIT_OPTIONS = [3, 5, 10] as const;
 
-export function WorstDays({ daily, visible, onSelectDay }: Props) {
+export function WorstDays({ daily, metric = "PM2.5", visible, onSelectDay }: Props) {
   const [rankBy, setRankBy] = useState<WorstRankBy>("max");
   const [limit, setLimit] = useState<(typeof LIMIT_OPTIONS)[number]>(3);
   const ranked = useMemo(
@@ -88,7 +89,7 @@ export function WorstDays({ daily, visible, onSelectDay }: Props) {
       <ul className="worst-days-list">
         {ranked.map((day, index) => {
           const value = day[rankBy];
-          const tone = pmTone(value);
+          const tone = pmTone(value, metric);
           return (
             <li key={day.date}>
               <button

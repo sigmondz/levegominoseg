@@ -1,7 +1,7 @@
 import type { Summary } from "../lib/types";
 import type { Theme } from "../lib/theme";
 import { toDateInputValue } from "../lib/aggregate";
-import { pmLabel, pmTone, WHO_24H } from "../lib/aqi";
+import { pmLabel, pmTone, who24h } from "../lib/aqi";
 import { BrandMark } from "./BrandMark";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -20,8 +20,9 @@ export function Hero({
   theme,
   onToggleTheme,
 }: Props) {
-  const tone = pmTone(data.mean);
+  const tone = pmTone(data.mean, data.metric);
   const rangeLabel = `${toDateInputValue(dataFromMs)} → ${toDateInputValue(dataToMs)}`;
+  const who = who24h(data.metric);
 
   return (
     <header className="hero">
@@ -40,13 +41,24 @@ export function Hero({
         <span>{data.chipId}</span>
       </div>
       <p className="hero-lead">
-        PM2.5 a helyi SPS30 szenzorból. A kiválasztott időszak átlaga{" "}
+        {data.metric} a helyi SPS30 szenzorból. A kiválasztott időszak átlaga{" "}
         <strong className={`tone-${tone}`}>
           {data.mean.toFixed(1)} {data.unit}
         </strong>
-        <br />
-        — ez {pmLabel(data.mean)} a WHO 24 órás irányértékhez{" "}
-        (<strong className="tone-good">{WHO_24H} {data.unit}</strong>) képest.
+        {who != null ? (
+          <>
+            <br />
+            — ez {pmLabel(data.mean, data.metric)} a WHO 24 órás irányértékhez{" "}
+            (<strong className="tone-good">
+              {who} {data.unit}
+            </strong>
+            ) képest.
+          </>
+        ) : (
+          <>
+            <br />— a {data.metric}-re nincs hivatalos WHO 24 órás irányérték.
+          </>
+        )}
       </p>
     </header>
   );

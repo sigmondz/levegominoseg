@@ -11,7 +11,7 @@ import type {
   TrendPoint,
   WithinMonthScope,
 } from "./types";
-import { WHO_24H } from "./aqi";
+import { who24h } from "./aqi";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
@@ -550,6 +550,7 @@ export function buildSummary(
       ? Math.floor(span / (meta.intervalMin * 60 * 1000)) + 1
       : valid;
   const empty = Math.max(0, expected - valid);
+  const who = who24h(meta.metric);
 
   return {
     sensor: meta.sensor,
@@ -580,7 +581,14 @@ export function buildSummary(
     above80pct: valid
       ? Number(((100 * vals.filter((v) => v >= 80).length) / valid).toFixed(1))
       : 0,
-    daysAboveWho: daily.filter((d) => d.mean >= WHO_24H).length,
+    aboveWhoPct:
+      valid && who != null
+        ? Number(
+            ((100 * vals.filter((v) => v >= who).length) / valid).toFixed(1),
+          )
+        : 0,
+    daysAboveWho:
+      who != null ? daily.filter((d) => d.mean >= who).length : 0,
     daysTotal: calendarDayCount(fromMs, toMs),
     daily,
     hourlyMean,

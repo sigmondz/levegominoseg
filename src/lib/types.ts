@@ -19,6 +19,9 @@ export type TrendPoint = {
   max: number;
 };
 
+/** Selectable pollutant series */
+export type MetricId = "PM1" | "PM2.5" | "PM10";
+
 export type DatasetMeta = {
   sensor: string;
   metric: string;
@@ -58,7 +61,9 @@ export type Summary = {
   above15pct: number;
   above25pct: number;
   above80pct: number;
-  /** Days with daily mean ≥ WHO 24h guideline. */
+  /** Share of readings ≥ WHO 24h guideline; 0 if metric has no WHO value. */
+  aboveWhoPct: number;
+  /** Days with daily mean ≥ WHO 24h guideline; 0 if metric has no WHO value. */
   daysAboveWho: number;
   /** Calendar days in the selected range (inclusive). */
   daysTotal: number;
