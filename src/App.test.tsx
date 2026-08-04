@@ -16,7 +16,7 @@ describe("App", () => {
         return new Response(JSON.stringify(TEST_SERIES), { status: 200 });
       }
       return originalFetch(input);
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
   });
 
   afterEach(() => {
@@ -55,7 +55,7 @@ describe("App", () => {
   test("hibaüzenet ha az adat nem tölthető be", async () => {
     globalThis.fetch = mock(async () => {
       return new Response(null, { status: 500 });
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
     const { findByRole } = render(<App />);
 
