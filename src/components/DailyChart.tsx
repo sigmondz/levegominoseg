@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
 import type { MaxWindow, SeriesEntry, TrendGrain, TrendPoint } from "../lib/types";
-import { GRAFANA_THRESHOLD, WHO_24H } from "../lib/aqi";
+import { GRAFANA_THRESHOLD, pmTone, WHO_24H } from "../lib/aqi";
 import { downloadFilteredCsv } from "../lib/exportCsv";
 import { InfoTip } from "./InfoTip";
 
@@ -88,7 +88,7 @@ function grainCopy(
       kicker: "Nyers felbontás",
       desc: `A szenzor ${intervalMin} percenkénti mintái aggregálás nélkül. A szaggatott vonalak a referencia-határértékek.`,
       seriesTitle: "Mért érték (görbe)",
-      seriesDesc: `Minden pont egy ${intervalMin} perces mérés — a tényleges időbeli változást mutatja, simítás nélkül.`,
+      seriesDesc: `Minden pont egyetlen ${intervalMin} perces szenzorolvasás, aggregálás és simítás nélkül. Így látszik a tényleges időbeli változás: a rövid kiugrások és a csendesebb szakaszok is. Hasznos, ha a pillanatnyi terhelést akarod követni, nem a hosszabb időszaki tipikus szintet. A grafikonon a folyamatos (nem szaggatott) görbe.`,
     };
   }
 
@@ -98,10 +98,10 @@ function grainCopy(
       kicker: "Napi aggregáció",
       desc: `Minden nap a ${intervalMin} perces mean értékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
       seriesTitle: "Átlag (görbe)",
-      seriesDesc: `Az adott nap összes ${intervalMin} perces mintájának számtani átlaga — a napi tipikus PM2.5-szintet mutatja.`,
+      seriesDesc: `Az adott nap összes érvényes ${intervalMin} perces mintájának számtani átlaga. A napi tipikus PM2.5-szintet mutatja: a rövid kiugrások kevésbé húzzák el, mint a nyers görbén. Így napokat hasonlíthatsz össze, és látod, általában milyen volt a terhelés. A grafikonon a folyamatos (nem szaggatott) görbe.`,
       maxDesc: maxIsRaw
-        ? `Az adott nap legmagasabb ${intervalMin} perces értéke — a napi csúcsterhelést mutatja.`
-        : `Az adott nap legmagasabb ${maxLabel} átlaga — a rövid csúcsokat simítva mutatja.`,
+        ? `Az adott nap legmagasabb ${intervalMin} perces mérése — a napi csúcsterhelést emeli ki. Ha egy rövid, erős szennyezési hullám volt, itt jelenik meg, még ha az átlagot alig emelte is. A max ablak „${intervalMin} perc” beállításánál ez a nyers csúcs. A grafikonon a piros görbe.`
+        : `Az adott napon belüli, ${maxLabel} ablakokra számolt átlagok közül a legmagasabb. A rövid, egyedi kiugrásokat simítja, de a tartósabb csúcsokat megőrzi — ezért kevésbé „zajérzékeny”, mint a nyers max. A max ablakot fent állíthatod. A grafikonon a piros görbe.`,
     };
   }
 
@@ -144,10 +144,10 @@ function grainCopy(
     kicker: `${titlePrefix} aggregáció`,
     desc: `A kiválasztott tartomány ${titlePrefix.toLowerCase()} mean és max értékei a ${intervalMin} perces mintákból.`,
     seriesTitle: "Átlag (görbe)",
-    seriesDesc: `Az adott ${windowLabel} mért minták számtani átlaga — a tipikus terhelést mutatja.`,
+    seriesDesc: `Az adott ${windowLabel} mért, érvényes ${intervalMin} perces minták számtani átlaga. A tipikus terhelést mutatja ebben az időablakban: a rövid zaj kevésbé látszik, mint a nyers görbén. Így követheted, hogyan alakult a PM2.5 a választott adatsűrűség szerint. A grafikonon a folyamatos (nem szaggatott) görbe.`,
     maxDesc: maxIsRaw
-      ? `Az adott ${windowLabel} mért legmagasabb érték — a rövid csúcsokat emeli ki.`
-      : `Az adott ${windowLabel} legmagasabb ${maxLabel} átlaga — a rövid csúcsokat simítva mutatja.`,
+      ? `Az adott ${windowLabel} mért legmagasabb ${intervalMin} perces érték — a rövid csúcsokat emeli ki. Ha egy erős, rövid szennyezési hullám volt, itt jelenik meg, még ha az átlagot alig emelte is. A max ablak „${intervalMin} perc” beállításánál ez a nyers csúcs. A grafikonon a piros görbe.`
+      : `Az adott ${windowLabel} belüli, ${maxLabel} ablakokra számolt átlagok közül a legmagasabb. A rövid, egyedi kiugrásokat simítja, de a tartósabb csúcsokat megőrzi — ezért kevésbé „zajérzékeny”, mint a nyers max. A max ablakot fent állíthatod. A grafikonon a piros görbe.`,
   };
 }
 
@@ -411,18 +411,25 @@ export function DailyChart({
 
         <div className="chart-legend-block" aria-label="Görbék jelmagyarázata">
           <p className="threshold-legend-title">Görbék</p>
-          <ul
-            className={`threshold-legend-list${showMax ? " threshold-legend-list--series" : ""}`}
-          >
+          <ul className="threshold-legend-list">
             <li>
               <span
                 className="series-swatch"
                 style={{ background: colors.chartMean }}
                 aria-hidden
               />
-              <div>
+              <div className="label-with-tip">
                 <strong>{copy.seriesTitle}</strong>
-                <span>{copy.seriesDesc}</span>
+                <InfoTip
+                  label={
+                    copy.seriesTitle.startsWith("Á")
+                      ? "Mi az átlag görbe?"
+                      : "Mi a mért érték görbe?"
+                  }
+                  tipId="series-mean-tip"
+                >
+                  {copy.seriesDesc}
+                </InfoTip>
               </div>
             </li>
             {showMax && copy.maxDesc ? (
@@ -432,9 +439,11 @@ export function DailyChart({
                   style={{ background: colors.bad }}
                   aria-hidden
                 />
-                <div>
+                <div className="label-with-tip">
                   <strong>Max (görbe)</strong>
-                  <span>{copy.maxDesc}</span>
+                  <InfoTip label="Mi a max görbe?" tipId="series-max-tip">
+                    {copy.maxDesc}
+                  </InfoTip>
                 </div>
               </li>
             ) : null}
@@ -450,11 +459,19 @@ export function DailyChart({
                 style={{ borderTopColor: colors.good }}
                 aria-hidden
               />
-              <div>
-                <strong>WHO 24 órás irányérték — {WHO_24H} µg/m³</strong>
-                <span>
-                  Az Egészségügyi Világszervezet ajánlása. Efelett a rövid távú
-                  PM2.5-terhelés már egészségügyi kockázatot jelez.
+              <div className="threshold-legend-item">
+                <div className="label-with-tip">
+                  <strong>WHO 24 órás irányérték</strong>
+                  <InfoTip label="Mi a WHO irányérték?" tipId="who-threshold-tip">
+                    A WHO 2021-es PM2.5 irányelve: a 24 órás átlag ne lépje túl a{" "}
+                    {WHO_24H} µg/m³-t. Nem jogszabályi határ, hanem egészségügyi
+                    ajánlás; efelett a rövid távú terhelés már növeli a
+                    légzőszervi és szív-érrendszeri kockázatot. A grafikonon a
+                    zöld szaggatott vonal jelöli.
+                  </InfoTip>
+                </div>
+                <span className="threshold-legend-value tone-good">
+                  {WHO_24H} µg/m³
                 </span>
               </div>
             </li>
@@ -464,13 +481,22 @@ export function DailyChart({
                 style={{ borderTopColor: colors.poor }}
                 aria-hidden
               />
-              <div>
-                <strong>
-                  Kiválasztott időszak átlaga — {mean.toFixed(1)} µg/m³
-                </strong>
-                <span>
-                  A jelenlegi szűrés összes érvényes mérésének számtani átlaga.
-                  Ehhez viszonyíthatod a görbéket.
+              <div className="threshold-legend-item">
+                <div className="label-with-tip">
+                  <strong>Kiválasztott időszak átlaga</strong>
+                  <InfoTip
+                    label="Mi a kiválasztott időszak átlaga?"
+                    tipId="mean-threshold-tip"
+                  >
+                    A jelenlegi szűrés összes érvényes {intervalMin} perces
+                    mérésének számtani átlaga — függetlenül attól, milyen
+                    adatsűrűséget választasz a görbéhez. Referenciaként szolgál:
+                    ehhez viszonyíthatod, a görbe hol van tipikusan a kiválasztott
+                    időszakban. A grafikonon a narancssárga szaggatott vonal jelöli.
+                  </InfoTip>
+                </div>
+                <span className={`threshold-legend-value tone-${pmTone(mean)}`}>
+                  {mean.toFixed(1)} µg/m³
                 </span>
               </div>
             </li>
@@ -480,14 +506,21 @@ export function DailyChart({
                 style={{ borderTopColor: colors.bad }}
                 aria-hidden
               />
-              <div>
-                <strong>
-                  Magas szennyezettségi küszöb — {GRAFANA_THRESHOLD} µg/m³
-                </strong>
-                <span>
-                  A Grafana dashboard piros riasztási szintje. Efelett a
-                  koncentráció erősen emelkedettnek számít. Alacsony tartományban
-                  a vonal a skálán kívül eshet.
+              <div className="threshold-legend-item">
+                <div className="label-with-tip">
+                  <strong>Magas szennyezettségi küszöb</strong>
+                  <InfoTip
+                    label="Mi a magas szennyezettségi küszöb?"
+                    tipId="alert-threshold-tip"
+                  >
+                    Efelett a levegő erősen szennyezettnek számít ezen az
+                    oldalon. Nem hivatalos határ, hanem helyi riasztási szint —
+                    többszöröse a WHO irányértéknek. A grafikonon a piros
+                    szaggatott vonal jelöli.
+                  </InfoTip>
+                </div>
+                <span className="threshold-legend-value tone-bad">
+                  {GRAFANA_THRESHOLD} µg/m³
                 </span>
               </div>
             </li>

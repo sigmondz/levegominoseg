@@ -16,7 +16,7 @@ export function InfoTip({ label, tipId, children, inCard = false }: Props) {
       aria-label={label}
       aria-describedby={tipId}
     >
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden>
         <circle
           cx="8"
           cy="8"

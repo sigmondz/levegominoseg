@@ -61,9 +61,10 @@
 .stat-label {
   font-family: var(--font-mono);
   font-size: 0.85rem;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text);
 }
 
 .stat-value {

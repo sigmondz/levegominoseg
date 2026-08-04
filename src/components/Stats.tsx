@@ -96,11 +96,11 @@ export function Stats({ data }: Props) {
         <Stat
           label="≥ 80 µg/m³"
           value={`${data.above80pct}%`}
-          hint="Grafana piros küszöb felett"
+          hint="erősen szennyezett tartomány felett"
           tone="bad"
           tipId="above80-tip"
           tipLabel="Mi a 80 µg/m³ küszöb?"
-          tip="A helyi riasztási szint: efelett számít erősen szennyezettnek a levegő (a Grafana dashboardon piros). A százalék a mérések aránya, amelyek átlépték ezt."
+          tip="Efelett a levegő erősen szennyezettnek számít. A százalék a mérések aránya, amelyek átlépték ezt."
         />
       </div>
     </section>

@@ -41,12 +41,14 @@
   margin: 0.35rem 0.75rem 0.85rem;
   padding: 0.85rem 1rem;
   border-top: 1px solid var(--line);
+  overflow: visible;
 }
 
 .chart-legend-block {
   margin: 0.35rem 0.75rem 0;
   padding: 0.85rem 1rem 0.35rem;
   border-top: 1px solid var(--line);
+  overflow: visible;
 }
 
 .threshold-legend-title {
@@ -63,17 +65,13 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.75rem;
+  gap: 0.55rem;
 }
 
 @media (min-width: 800px) {
   .threshold-legend-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
-  }
-
-  .threshold-legend-list--series {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem 1rem;
   }
 }
 
@@ -81,30 +79,49 @@
   display: grid;
   grid-template-columns: 1.25rem 1fr;
   gap: 0.65rem;
-  align-items: start;
+  align-items: center;
 }
 
-.threshold-legend-list strong {
-  display: block;
+.threshold-legend-list .label-with-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.threshold-legend-list .label-with-tip strong {
+  display: inline;
   font-size: 1.05rem;
   font-weight: 600;
   color: var(--text);
-  margin-bottom: 0.25rem;
   line-height: 1.3;
 }
 
-.threshold-legend-list span:last-child {
-  display: block;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: var(--text-muted);
+.threshold-legend-list .label-with-tip .info-tip {
+  flex-shrink: 0;
+}
+
+.threshold-legend-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.threshold-legend-value {
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .series-swatch {
   display: block;
   width: 1.15rem;
   height: 0.28rem;
-  margin-top: 0.55rem;
   border-radius: 999px;
 }
 
@@ -112,7 +129,6 @@
   display: block;
   width: 1.15rem;
   height: 0;
-  margin-top: 0.55rem;
   border-top-width: 2px;
   border-top-style: dashed;
 }

@@ -16,7 +16,7 @@ const summary = buildSummary(
 
 describe("DailyChart", () => {
   test("grafikon és legendák megjelennek", () => {
-    const { getByText } = render(
+    const { getByText, getByRole } = render(
       <DailyChart
         trend={summary.trend}
         mean={summary.mean}
@@ -35,7 +35,23 @@ describe("DailyChart", () => {
 
     expect(getByText("Napi átlag és csúcs")).toBeInTheDocument();
     expect(document.querySelector(".recharts-responsive-container")).toBeTruthy();
-    expect(getByText(/WHO 24 órás irányérték/)).toBeInTheDocument();
+    expect(getByText("WHO 24 órás irányérték")).toBeInTheDocument();
+    expect(getByText("15 µg/m³")).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Mi az átlag görbe?" }),
+    ).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Mi a max görbe?" }),
+    ).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Mi a WHO irányérték?" }),
+    ).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Mi a kiválasztott időszak átlaga?" }),
+    ).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Mi a magas szennyezettségi küszöb?" }),
+    ).toBeInTheDocument();
   });
 
   test("adatsűrűség gombok váltanak", async () => {
