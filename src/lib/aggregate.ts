@@ -206,13 +206,15 @@ export function resolveWithinMonth(
 
   if (scope === "7d" || scope === "14d") {
     const days = scope === "7d" ? 7 : 14;
-    const startKey =
-      options?.windowStart ??
-      toDateInputValue(
-        Math.max(bounds.fromMs, startOfLocalDay(bounds.toMs - (days - 1) * DAY_MS)),
-      );
+    const windows = listWindowsInMonth(monthKey, dataFromMs, dataToMs, days);
+    const startKey = options?.windowStart ?? windows.at(-1)?.id ?? toDateInputValue(bounds.fromMs);
     const from = startOfLocalDay(new Date(`${startKey}T00:00:00`).getTime());
-    const to = endOfLocalDay(from + (days - 1) * DAY_MS);
+    const idx = windows.findIndex((w) => w.id === startKey);
+    // Last window absorbs remaining days through month end; earlier ones stay fixed length.
+    const to =
+      idx >= 0 && idx === windows.length - 1
+        ? bounds.toMs
+        : endOfLocalDay(from + (days - 1) * DAY_MS);
     return {
       fromMs: Math.max(bounds.fromMs, from),
       toMs: Math.min(bounds.toMs, to),
@@ -261,7 +263,11 @@ export function listDaysInMonth(
   return items;
 }
 
-/** Sliding windows of `lengthDays` inside the month (non-overlapping where possible). */
+/**
+ * Non-overlapping windows inside the month.
+ * 7d → at most 4 (first three are 7 days, last gets the remainder).
+ * 14d → at most 2 (first 14 days, last gets the remainder).
+ */
 export function listWindowsInMonth(
   monthKey: MonthKey,
   dataFromMs: number,
@@ -272,34 +278,36 @@ export function listWindowsInMonth(
   const items: { id: string; label: string }[] = [];
   const first = startOfLocalDay(bounds.fromMs);
   const last = startOfLocalDay(bounds.toMs);
-  const spanDays =
-    Math.floor((last - first) / DAY_MS) + 1;
+  const spanDays = Math.floor((last - first) / DAY_MS) + 1;
 
   if (spanDays <= 0) return items;
 
-  // Non-overlapping windows from month start; last window may be shorter visually
-  // but we only offer full-length windows that fit, plus a final window ending at month end.
-  const starts = new Set<number>();
-  for (let offset = 0; offset + lengthDays - 1 < spanDays; offset += lengthDays) {
-    starts.add(first + offset * DAY_MS);
-  }
-  // Always include a window ending on the last day (if month has enough days).
-  if (spanDays >= lengthDays) {
-    starts.add(last - (lengthDays - 1) * DAY_MS);
-  } else {
-    starts.add(first);
+  const maxWindows = lengthDays === 7 ? 4 : 2;
+  let fullCount = Math.min(maxWindows - 1, Math.floor(spanDays / lengthDays));
+  const coveredByFull = fullCount * lengthDays;
+
+  // If full windows already cover the whole span, emit only those (no empty remainder).
+  if (coveredByFull >= spanDays) {
+    fullCount = Math.floor(spanDays / lengthDays);
   }
 
-  const sorted = [...starts].sort((a, b) => a - b);
-  for (const startMs of sorted) {
-    const endMs = Math.min(last, startMs + (lengthDays - 1) * DAY_MS);
-    const fromLabel = formatShortDay(startMs);
-    const toLabel = formatShortDay(endMs);
+  for (let i = 0; i < fullCount; i++) {
+    const startMs = first + i * lengthDays * DAY_MS;
+    const endMs = startMs + (lengthDays - 1) * DAY_MS;
     items.push({
       id: toDateInputValue(startMs),
-      label: `${fromLabel}–${toLabel}`,
+      label: `${formatShortDay(startMs)}–${formatShortDay(endMs)}`,
     });
   }
+
+  if (fullCount * lengthDays < spanDays) {
+    const startMs = first + fullCount * lengthDays * DAY_MS;
+    items.push({
+      id: toDateInputValue(startMs),
+      label: `${formatShortDay(startMs)}–${formatShortDay(last)}`,
+    });
+  }
+
   return items;
 }
 
