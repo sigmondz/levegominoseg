@@ -50,7 +50,7 @@ export function Hero({
             <br />
             — ez {pmLabel(data.mean, data.metric)} a WHO 24 órás irányértékhez{" "}
             (
-            <strong>
+            <strong className="hero-who-threshold">
               {who} {data.unit}
             </strong>
             ) képest.

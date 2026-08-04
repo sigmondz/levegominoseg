@@ -156,3 +156,8 @@
   opacity: 0;
   animation: rise 0.8s ease forwards 0.45s;
 }
+
+.hero-who-threshold {
+  color: var(--text);
+  font-weight: 700;
+}
