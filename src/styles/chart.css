@@ -1,0 +1,146 @@
+.chart-empty {
+  margin: 0;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.chart-shell {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.65rem 0.35rem 0.35rem;
+  background: var(--chart-shell);
+  backdrop-filter: blur(8px);
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0 1rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.chart-legend i,
+.chart-legend .swatch {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+  margin-right: 0.4rem;
+  vertical-align: -1px;
+}
+
+.threshold-legend {
+  margin: 0.35rem 0.75rem 0.85rem;
+  padding: 0.85rem 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.chart-legend-block {
+  margin: 0.35rem 0.75rem 0;
+  padding: 0.85rem 1rem 0.35rem;
+  border-top: 1px solid var(--line);
+}
+
+.threshold-legend-title {
+  margin: 0 0 0.65rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.threshold-legend-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 800px) {
+  .threshold-legend-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .threshold-legend-list--series {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.threshold-legend-list li {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  gap: 0.65rem;
+  align-items: start;
+}
+
+.threshold-legend-list strong {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+  line-height: 1.3;
+}
+
+.threshold-legend-list span:last-child {
+  display: block;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.series-swatch {
+  display: block;
+  width: 1.15rem;
+  height: 0.28rem;
+  margin-top: 0.55rem;
+  border-radius: 999px;
+}
+
+.threshold-line {
+  display: block;
+  width: 1.15rem;
+  height: 0;
+  margin-top: 0.55rem;
+  border-top-width: 2px;
+  border-top-style: dashed;
+}
+
+.threshold-line--who {
+  border-top-color: var(--good);
+}
+
+.threshold-line--mean {
+  border-top-color: var(--poor);
+  border-top-style: dotted;
+}
+
+.threshold-line--alert {
+  border-top-color: var(--bad);
+}
+
+.note {
+  margin-top: 0.9rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--poor);
+  background: var(--note-bg);
+  color: var(--text-muted);
+  line-height: 1.45;
+  font-size: 0.9rem;
+}
+
+.note strong {
+  color: var(--text);
+  font-weight: 600;
+}

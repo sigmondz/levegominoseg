@@ -13,6 +13,7 @@ import {
   resolveMaxWindow,
   resolveTrendGrain,
   resolveWithinMonth,
+  formatDateTime,
   toDateInputValue,
 } from "./lib/aggregate";
 import type {
@@ -266,6 +267,9 @@ export default function App() {
     return <div className="loading">Adatok betöltése…</div>;
   }
 
+  const dataFrom = toDateInputValue(series.meta.fromMs);
+  const lastMeasurement = formatDateTime(series.meta.toMs).slice(0, 16);
+
   return (
     <div className="app">
       <Hero
@@ -355,8 +359,12 @@ export default function App() {
             {data.sensor} {data.metric}
           </code>
         </span>
+        <span className="footer-freshness">
+          Adatforrás: {dataFrom} → {lastMeasurement.slice(0, 10)} · Utolsó
+          mérés: {lastMeasurement} · Nem élő adat
+        </span>
         <span>
-          Nyers adat: <code>/data/pm25-sps30-2026.csv</code>
+          Nyers fájl: <code>/data/pm25-sps30-2026.csv</code>
         </span>
       </footer>
     </div>

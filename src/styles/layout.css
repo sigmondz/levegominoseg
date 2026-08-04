@@ -1,0 +1,80 @@
+.app {
+  position: relative;
+  overflow-x: clip;
+  /* Keep ::before/::after behind content without trapping popovers
+     in per-child stacking contexts (which broke date-picker z-index). */
+  isolation: isolate;
+}
+
+.app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 75% 48% at 12% 6%, var(--fog), transparent 58%),
+    radial-gradient(ellipse 58% 42% at 90% 10%, var(--fog-strong), transparent 52%),
+    radial-gradient(ellipse 48% 38% at 78% 48%, var(--fog-warm), transparent 55%),
+    radial-gradient(ellipse 55% 42% at 18% 62%, var(--fog-cool), transparent 52%),
+    radial-gradient(ellipse 80% 52% at 48% 108%, var(--glow-bottom), transparent 58%),
+    linear-gradient(168deg, var(--bg) 0%, var(--app-mid) 42%, var(--bg) 100%);
+  transition: background 0.25s ease;
+}
+
+.app::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: var(--noise-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
+  mix-blend-mode: var(--noise-blend);
+}
+
+.footer {
+  padding: 1.25rem clamp(1.25rem, 4vw, 2.5rem) 2rem;
+  border-top: 1px solid var(--line);
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  justify-content: space-between;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.footer-freshness {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  letter-spacing: 0.02em;
+}
+
+.footer code {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  color: var(--text);
+}
+
+.loading,
+.error {
+  min-height: 40vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.loading {
+  font-family: var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.error {
+  color: var(--bad);
+}
