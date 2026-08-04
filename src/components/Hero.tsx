@@ -2,6 +2,7 @@ import type { Summary } from "../lib/types";
 import type { Theme } from "../lib/theme";
 import { toDateInputValue } from "../lib/aggregate";
 import { pmLabel, pmTone, WHO_24H } from "../lib/aqi";
+import { BrandMark } from "./BrandMark";
 import { ThemeToggle } from "./ThemeToggle";
 
 type Props = {
@@ -27,7 +28,10 @@ export function Hero({
       <div className="hero-toolbar">
         <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </div>
-      <h1 className="hero-brand">Levegőminőség Nagymaroson</h1>
+      <h1 className="hero-brand">
+        <BrandMark className="hero-brand-mark" />
+        <span>Levegőminőség Nagymaroson</span>
+      </h1>
       <div className="hero-meta">
         <span>
           {data.sensor} · {data.metric}

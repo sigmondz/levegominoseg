@@ -245,6 +245,9 @@ a {
 }
 
 .hero-brand {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.45rem, 1.2vw, 0.75rem);
   margin: 0;
   font-family: var(--font-display);
   font-weight: 800;
@@ -252,10 +255,23 @@ a {
   line-height: 1;
   letter-spacing: -0.02em;
   text-transform: uppercase;
-  white-space: nowrap;
   color: var(--text);
   opacity: 0;
   animation: rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.2s;
+}
+
+.hero-brand-mark {
+  flex-shrink: 0;
+  display: block;
+  width: 1.15em;
+  height: 1.15em;
+  translate: 0 0.02em;
+}
+
+.hero-brand span {
+  min-width: 0;
+  white-space: nowrap;
+  line-height: 1;
 }
 
 .hero-lead {
