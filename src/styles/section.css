@@ -43,6 +43,7 @@
 .export-btn {
   appearance: none;
   cursor: pointer;
+  position: relative;
   flex-shrink: 0;
   padding: 0.65rem 1rem;
   border-radius: 999px;
@@ -59,6 +60,15 @@
     color 0.2s ease;
 }
 
+.export-btn--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+}
+
 .export-btn:hover:not(:disabled) {
   background: var(--accent);
   border-color: var(--accent);
@@ -73,6 +83,41 @@
 .export-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.export-btn-tip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.45rem);
+  z-index: 20;
+  width: max-content;
+  max-width: min(18rem, 78vw);
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.45;
+  text-align: left;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  transform: translateX(-50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease;
+}
+
+.export-btn:hover .export-btn-tip,
+.export-btn:focus-visible .export-btn-tip {
+  opacity: 1;
+  visibility: visible;
 }
 
 .export-btn-with-tip {

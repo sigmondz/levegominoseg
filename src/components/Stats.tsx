@@ -117,7 +117,7 @@ export function Stats({ data }: Props) {
                 >
                   {data.daysAboveWho}
                 </span>
-                <span className="tone-good">/{data.daysTotal}</span>
+                <span className="stat-value-total">/{data.daysTotal}</span>
               </>
             }
             hint="napok a WHO irányérték felett"

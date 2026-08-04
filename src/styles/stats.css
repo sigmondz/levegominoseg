@@ -113,6 +113,10 @@
   margin-left: 0.25rem;
 }
 
+.stat-value-total {
+  color: var(--text);
+}
+
 .stat-hint {
   font-size: 0.95rem;
   color: var(--text-muted);
