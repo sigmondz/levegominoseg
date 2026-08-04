@@ -21,7 +21,7 @@ export function ThemeToggle({ theme, onToggle }: Props) {
     >
       <span className="theme-switch-track" aria-hidden="true">
         <span className="theme-switch-icon theme-switch-icon--moon">
-          <svg viewBox="0 0 24 24" width="12" height="12" fill="none">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
             <path
               d="M21 14.3A8.5 8.5 0 0 1 9.7 3 7 7 0 1 0 21 14.3Z"
               stroke="currentColor"
@@ -31,7 +31,7 @@ export function ThemeToggle({ theme, onToggle }: Props) {
           </svg>
         </span>
         <span className="theme-switch-icon theme-switch-icon--sun">
-          <svg viewBox="0 0 24 24" width="12" height="12" fill="none">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
             <circle
               cx="12"
               cy="12"

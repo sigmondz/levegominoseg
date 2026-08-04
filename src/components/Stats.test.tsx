@@ -23,12 +23,12 @@ describe("Stats", () => {
     expect(getByText("Maximum")).toBeInTheDocument();
     expect(getByText("≥ 80 µg/m³")).toBeInTheDocument();
     expect(getByText(`${summary.mean.toFixed(1)}`)).toBeInTheDocument();
-    expect(getByText("WHO felett")).toBeInTheDocument();
+    expect(getByText("WHO érték felett")).toBeInTheDocument();
     expect(
       getByText((_, el) => {
         return (
           el?.classList.contains("stat-value") === true &&
-          el.textContent === `${summary.daysAboveWho}/${summary.daysTotal}`
+          el.textContent === `${summary.daysAboveWho}/${summary.daysTotal}nap`
         );
       }),
     ).toBeInTheDocument();
@@ -44,6 +44,34 @@ describe("Stats", () => {
       "3m",
     );
     const { queryByText } = render(<Stats data={oneDay} />);
-    expect(queryByText("WHO felett")).toBeNull();
+    expect(queryByText("WHO érték felett")).toBeNull();
+  });
+
+  test("PM1-nél nincs WHO feletti kártya", () => {
+    const pm1 = buildSummary(
+      TEST_POINTS,
+      { ...TEST_META, metric: "PM1" },
+      TEST_META.fromMs,
+      TEST_META.fromMs + 5 * 24 * 60 * 60 * 1000,
+      "day",
+      "3m",
+    );
+    const { queryByText, getByText } = render(<Stats data={pm1} />);
+    expect(queryByText("WHO érték felett")).toBeNull();
+    expect(getByText("nincs hivatalos WHO irányérték")).toBeInTheDocument();
+  });
+
+  test("PM10-nél WHO 45 jelenik meg", () => {
+    const pm10 = buildSummary(
+      TEST_POINTS,
+      { ...TEST_META, metric: "PM10" },
+      TEST_META.fromMs,
+      TEST_META.fromMs + 5 * 24 * 60 * 60 * 1000,
+      "day",
+      "3m",
+    );
+    const { getByText } = render(<Stats data={pm10} />);
+    expect(getByText(`${pm10.aboveWhoPct}% a WHO 45 felett`)).toBeInTheDocument();
+    expect(getByText("WHO érték felett")).toBeInTheDocument();
   });
 });
