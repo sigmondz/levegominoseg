@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import {
   GRAFANA_THRESHOLD,
+  parseMetricSlug,
   pmLabel,
   pmTone,
+  seriesUrl,
   who24h,
   WHO_24H,
 } from "./aqi";
@@ -37,6 +39,16 @@ describe("aqi", () => {
     expect(who24h("PM2.5")).toBe(15);
     expect(who24h("PM10")).toBe(45);
     expect(who24h("PM1")).toBeNull();
+  });
+
+  test("parseMetricSlug és seriesUrl", () => {
+    expect(parseMetricSlug("pm1")).toBe("PM1");
+    expect(parseMetricSlug("pm25")).toBe("PM2.5");
+    expect(parseMetricSlug("pm10")).toBe("PM10");
+    expect(parseMetricSlug("nope")).toBeNull();
+    expect(seriesUrl("PM1")).toBe("/data/series-pm1.json");
+    expect(seriesUrl("PM2.5")).toBe("/data/series-pm25.json");
+    expect(seriesUrl("PM10")).toBe("/data/series-pm10.json");
   });
 
   test("konstans határértékek", () => {

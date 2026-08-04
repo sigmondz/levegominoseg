@@ -170,4 +170,55 @@ describe("aggregate", () => {
     expect(summary.mean).toBe(0);
     expect(summary.trend).toEqual([]);
   });
+
+  test("buildSummary aboveWhoPct PM2.5-nél a 15-ös küszöbbel egyezik", () => {
+    const summary = buildSummary(
+      TEST_POINTS,
+      TEST_META,
+      TEST_META.fromMs,
+      TEST_META.fromMs + 2 * 24 * 60 * 60 * 1000,
+      "day",
+      "3m",
+    );
+    expect(summary.aboveWhoPct).toBe(summary.above15pct);
+    expect(summary.daysAboveWho).toBeGreaterThan(0);
+  });
+
+  test("buildSummary PM10 WHO 45 küszöböt használ", () => {
+    const fromMs = TEST_META.fromMs;
+    const toMs = TEST_META.fromMs + 2 * 24 * 60 * 60 * 1000;
+    const summary = buildSummary(
+      TEST_POINTS,
+      { ...TEST_META, metric: "PM10" },
+      fromMs,
+      toMs,
+      "day",
+      "3m",
+    );
+    const vals = TEST_POINTS.filter(([t]) => t >= fromMs && t <= toMs).map(
+      ([, v]) => v,
+    );
+    const expectedPct = Number(
+      ((100 * vals.filter((v) => v >= 45).length) / vals.length).toFixed(1),
+    );
+    expect(summary.aboveWhoPct).toBe(expectedPct);
+    expect(summary.aboveWhoPct).toBeLessThan(summary.above15pct);
+    expect(summary.daysAboveWho).toBe(
+      summary.daily.filter((d) => d.mean >= 45).length,
+    );
+  });
+
+  test("buildSummary PM1-nél nincs WHO statisztika", () => {
+    const summary = buildSummary(
+      TEST_POINTS,
+      { ...TEST_META, metric: "PM1" },
+      TEST_META.fromMs,
+      TEST_META.fromMs + 2 * 24 * 60 * 60 * 1000,
+      "day",
+      "3m",
+    );
+    expect(summary.aboveWhoPct).toBe(0);
+    expect(summary.daysAboveWho).toBe(0);
+    expect(summary.above15pct).toBeGreaterThan(0);
+  });
 });

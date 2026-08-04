@@ -4,26 +4,35 @@ import userEvent from "@testing-library/user-event";
 import App from "./App";
 import { TEST_SERIES } from "./test/fixtures";
 
+function metricFromSeriesUrl(url: string): string {
+  if (url.includes("series-pm10")) return "PM10";
+  if (url.includes("series-pm1")) return "PM1";
+  return "PM2.5";
+}
+
+function isSeriesUrl(url: string): boolean {
+  return (
+    url.includes("/data/series-pm25.json") ||
+    url.includes("/data/series-pm1.json") ||
+    url.includes("/data/series-pm10.json") ||
+    url.includes("/data/series.json")
+  );
+}
+
 describe("App", () => {
   let originalFetch: typeof fetch;
+  let seriesFetchCount: Map<string, number>;
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
+    seriesFetchCount = new Map();
     window.history.replaceState(null, "", "/");
     window.localStorage.clear();
     globalThis.fetch = mock(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (
-        url.includes("/data/series-pm25.json") ||
-        url.includes("/data/series-pm1.json") ||
-        url.includes("/data/series-pm10.json") ||
-        url.includes("/data/series.json")
-      ) {
-        const metric = url.includes("pm1")
-          ? "PM1"
-          : url.includes("pm10")
-            ? "PM10"
-            : "PM2.5";
+      if (isSeriesUrl(url)) {
+        const metric = metricFromSeriesUrl(url);
+        seriesFetchCount.set(metric, (seriesFetchCount.get(metric) ?? 0) + 1);
         return new Response(
           JSON.stringify({
             ...TEST_SERIES,
@@ -55,6 +64,21 @@ describe("App", () => {
     });
   });
 
+  test("URL metric=pm1-ről indul", async () => {
+    window.history.replaceState(null, "", "/?metric=pm1");
+    const { findByRole, findByText } = render(<App />);
+
+    await findByText("Levegőminőség Nagymaroson");
+    expect(await findByRole("button", { name: "PM1" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await waitFor(() => {
+      expect(seriesFetchCount.get("PM1")).toBe(1);
+      expect(seriesFetchCount.get("PM2.5") ?? 0).toBe(0);
+    });
+  });
+
   test("adatsor váltó PM10-re vált", async () => {
     const user = userEvent.setup();
     const { findByRole, findByText } = render(<App />);
@@ -66,6 +90,33 @@ describe("App", () => {
     await waitFor(() => {
       expect(window.location.search).toContain("metric=pm10");
     });
+    expect(await findByRole("button", { name: "PM10" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  test("vissza-váltáskor a cache miatt nincs újabb fetch", async () => {
+    const user = userEvent.setup();
+    const { findByRole, findByText } = render(<App />);
+
+    await findByText("Levegőminőség Nagymaroson");
+    await waitFor(() => {
+      expect(seriesFetchCount.get("PM2.5")).toBe(1);
+    });
+
+    await user.click(await findByRole("button", { name: "PM10" }));
+    await waitFor(() => {
+      expect(seriesFetchCount.get("PM10")).toBe(1);
+      expect(window.location.search).toContain("metric=pm10");
+    });
+
+    await user.click(await findByRole("button", { name: "PM2.5" }));
+    await waitFor(() => {
+      expect(window.location.search).not.toContain("metric=");
+    });
+    expect(seriesFetchCount.get("PM2.5")).toBe(1);
+    expect(seriesFetchCount.get("PM10")).toBe(1);
   });
 
   test("téma váltó gomb működik", async () => {
