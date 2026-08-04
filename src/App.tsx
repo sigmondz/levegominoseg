@@ -8,14 +8,12 @@ import {
   availableTrendGrains,
   buildSummary,
   listDaysInMonth,
-  listMonthPresets,
   listWindowsInMonth,
   monthBounds,
   resolveMaxWindow,
   resolveTrendGrain,
   resolveWithinMonth,
   toDateInputValue,
-  toMonthKey,
 } from "./lib/aggregate";
 import type {
   MaxWindow,
@@ -24,6 +22,14 @@ import type {
   TrendGrain,
   WithinMonthScope,
 } from "./lib/types";
+import {
+  buildDefaultViewState,
+  buildSearchParams,
+  parseViewState,
+  readSearch,
+  writeSearch,
+  type ViewState,
+} from "./lib/urlState";
 
 const DailyChart = lazy(async () => {
   const mod = await import("./components/DailyChart");
@@ -34,16 +40,6 @@ const HourlyChart = lazy(async () => {
   const mod = await import("./components/HourlyChart");
   return { default: mod.HourlyChart };
 });
-
-function defaultMonthKey(fromMs: number, toMs: number): MonthKey {
-  const months = listMonthPresets(fromMs, toMs);
-  const january = months.find((m) => m.id.endsWith("-01"));
-  return (
-    january?.id ??
-    months[0]?.id ??
-    toMonthKey(new Date(fromMs).getFullYear(), new Date(fromMs).getMonth() + 1)
-  );
-}
 
 function defaultDay(
   month: MonthKey,
@@ -62,6 +58,29 @@ function defaultWindow(
 ): string {
   const windows = listWindowsInMonth(month, dataFromMs, dataToMs, length);
   return windows.at(-1)?.id ?? toDateInputValue(dataFromMs);
+}
+
+function applyViewState(
+  view: ViewState,
+  setters: {
+    setMonthKey: (v: MonthKey) => void;
+    setWithin: (v: WithinMonthScope) => void;
+    setSelectedDay: (v: string) => void;
+    setWindowStart: (v: string) => void;
+    setCustomFrom: (v: string) => void;
+    setCustomTo: (v: string) => void;
+    setTrendGrain: (v: TrendGrain) => void;
+    setMaxWindow: (v: MaxWindow) => void;
+  },
+) {
+  setters.setMonthKey(view.monthKey);
+  setters.setWithin(view.within);
+  setters.setSelectedDay(view.selectedDay);
+  setters.setWindowStart(view.windowStart);
+  setters.setCustomFrom(view.customFrom);
+  setters.setCustomTo(view.customTo);
+  setters.setTrendGrain(view.trendGrain);
+  setters.setMaxWindow(view.maxWindow);
 }
 
 export default function App() {
@@ -88,19 +107,19 @@ export default function App() {
         }
         const json = (await res.json()) as SeriesFile;
         if (!cancelled) {
-          const month = defaultMonthKey(json.meta.fromMs, json.meta.toMs);
-          const bounds = monthBounds(month, json.meta.fromMs, json.meta.toMs);
+          const defaults = buildDefaultViewState(json.meta);
+          const view = parseViewState(readSearch(), json.meta, defaults);
           setSeries(json);
-          setMonthKey(month);
-          setWithin("month");
-          setSelectedDay(
-            defaultDay(month, json.meta.fromMs, json.meta.toMs),
-          );
-          setWindowStart(
-            defaultWindow(month, json.meta.fromMs, json.meta.toMs, 7),
-          );
-          setCustomFrom(toDateInputValue(bounds.fromMs));
-          setCustomTo(toDateInputValue(bounds.toMs));
+          applyViewState(view, {
+            setMonthKey,
+            setWithin,
+            setSelectedDay,
+            setWindowStart,
+            setCustomFrom,
+            setCustomTo,
+            setTrendGrain,
+            setMaxWindow,
+          });
         }
       } catch (err) {
         if (!cancelled) {
@@ -114,6 +133,28 @@ export default function App() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!series) return;
+
+    function onPopState() {
+      const defaults = buildDefaultViewState(series!.meta);
+      const view = parseViewState(readSearch(), series!.meta, defaults);
+      applyViewState(view, {
+        setMonthKey,
+        setWithin,
+        setSelectedDay,
+        setWindowStart,
+        setCustomFrom,
+        setCustomTo,
+        setTrendGrain,
+        setMaxWindow,
+      });
+    }
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [series]);
 
   const range = useMemo(() => {
     if (!series || !monthKey) return null;
@@ -152,6 +193,37 @@ export default function App() {
       resolveMaxWindow(trendGrain, series.meta.intervalMin, current),
     );
   }, [trendGrain, series]);
+
+  const urlDefaults = useMemo(
+    () => (series ? buildDefaultViewState(series.meta) : null),
+    [series],
+  );
+
+  useEffect(() => {
+    if (!series || !monthKey || !urlDefaults) return;
+    const state: ViewState = {
+      monthKey,
+      within,
+      selectedDay,
+      windowStart,
+      customFrom,
+      customTo,
+      trendGrain,
+      maxWindow,
+    };
+    writeSearch(buildSearchParams(state, urlDefaults));
+  }, [
+    series,
+    monthKey,
+    within,
+    selectedDay,
+    windowStart,
+    customFrom,
+    customTo,
+    trendGrain,
+    maxWindow,
+    urlDefaults,
+  ]);
 
   const availableGrains = useMemo(() => {
     if (!range) return [] as TrendGrain[];
