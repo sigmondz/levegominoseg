@@ -10,7 +10,7 @@
     "copy:public": "cp -R public/. dist/",
     "start": "NODE_ENV=production bun src/index.ts",
     "lint": "oxlint",
-    "deploy": "bun run build && wrangler pages deploy dist --project-name=levegominoseg --commit-dirty=true"
+    "deploy": "bun run build && npx wrangler pages deploy dist --project-name=levegominoseg --commit-dirty=true"
   },
   "dependencies": {
     "react": "^19.2.8",

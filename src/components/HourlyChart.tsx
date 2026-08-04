@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
 import type { HourlyPoint } from "../lib/types";
+import { InfoTip } from "./InfoTip";
 
 type Props = {
   hourly: HourlyPoint[];
@@ -39,7 +40,16 @@ export function HourlyChart({ hourly }: Props) {
   return (
     <section className="section" id="orankent" aria-labelledby="hourly-title">
       <div className="section-head">
-        <p className="section-kicker">Napi ritmus</p>
+        <div className="label-with-tip">
+          <p className="section-kicker">Napi ritmus</p>
+          <InfoTip label="Mi a napi ritmus?" tipId="hourly-tip">
+            Nem egyetlen nap idővonala, hanem a napszakok tipikus mintája. Minden
+            órához (0–23) összefoglaljuk a kiválasztott időszak összes olyan
+            mérését, ami abban az órában készült, és ezek átlagát rajzoljuk.
+            Így látszik például, reggel vagy este szokott-e magasabb lenni a
+            PM2.5 — akár egy hét, akár egy hónap alapján.
+          </InfoTip>
+        </div>
         <h2 className="section-title" id="hourly-title">
           Óránkénti profil
         </h2>
