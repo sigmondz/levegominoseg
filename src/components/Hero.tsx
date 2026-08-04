@@ -41,25 +41,23 @@ export function Hero({
         <span>{data.chipId}</span>
       </div>
       <p className="hero-lead">
-        {data.metric} a helyi SPS30 szenzorból. A kiválasztott időszak átlaga{" "}
+        A {data.metric} adatok helyi SPS30 szenzorból származnak. Az időszak
+        átlaga{" "}
         <strong className={`tone-${tone}`}>
           {data.mean.toFixed(1)}{" "}
           <small>{data.unit}</small>
         </strong>
         {who != null ? (
           <>
-            <br />
-            — ez {pmLabel(data.mean, data.metric)} a WHO 24 órás irányértékhez{" "}
-            (
+            {" "}
+            — ez {pmLabel(data.mean, data.metric)} a WHO irányértékhez (
             <strong className="hero-who-threshold">
               {who} <small>{data.unit}</small>
             </strong>
             ) képest.
           </>
         ) : (
-          <>
-            <br />— a {data.metric}-re nincs hivatalos WHO 24 órás irányérték.
-          </>
+          <> — a {data.metric}-re nincs hivatalos WHO irányérték.</>
         )}
       </p>
     </header>

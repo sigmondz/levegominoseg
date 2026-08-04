@@ -27,7 +27,7 @@ describe("Hero", () => {
 
     expect(getByText("Levegőminőség Nagymaroson")).toBeInTheDocument();
     expect(container.textContent).toContain(
-      "PM2.5 a helyi SPS30 szenzorból",
+      "A PM2.5 adatok helyi SPS30 szenzorból származnak",
     );
     expect(container.textContent).toContain("15 µg/m³");
   });
@@ -51,7 +51,9 @@ describe("Hero", () => {
       />,
     );
 
-    expect(container.textContent).toContain("PM10 a helyi SPS30 szenzorból");
+    expect(container.textContent).toContain(
+      "A PM10 adatok helyi SPS30 szenzorból származnak",
+    );
     expect(container.textContent).toContain("45 µg/m³");
   });
 
@@ -75,8 +77,8 @@ describe("Hero", () => {
     );
 
     expect(container.textContent).toContain(
-      "a PM1-re nincs hivatalos WHO 24 órás irányérték",
+      "a PM1-re nincs hivatalos WHO irányérték",
     );
-    expect(queryByText(/WHO 24 órás irányértékhez/)).toBeNull();
+    expect(queryByText(/WHO irányértékhez/)).toBeNull();
   });
 });
