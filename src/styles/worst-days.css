@@ -3,7 +3,11 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem 1rem;
+  gap: var(--space-md) 1rem;
+}
+
+.worst-days .section-head > :first-child {
+  margin-bottom: 0;
 }
 
 .worst-days-rank {
@@ -14,14 +18,14 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 0.85rem;
+  gap: var(--space-sm) var(--space-md);
 }
 
 .worst-days-limit-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.45rem 0.65rem;
+  gap: var(--space-xs) var(--space-md);
 }
 
 .worst-days-limit-label {
@@ -56,8 +60,8 @@
   display: grid;
   grid-template-columns: 1.75rem minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 0.75rem 1rem;
-  padding: 0.85rem 1rem;
+  gap: var(--space-md) 1rem;
+  padding: var(--space-md) 1rem;
   border: none;
   background: var(--bg-elevated);
   backdrop-filter: blur(10px);

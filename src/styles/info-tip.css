@@ -1,7 +1,7 @@
 .label-with-tip {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--space-xs);
 }
 
 .info-tip {

@@ -3,14 +3,14 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  padding: clamp(1rem, 2.5vw, 1.5rem) clamp(1.25rem, 4vw, 2.5rem) 0.5rem;
+  padding: var(--space-xl) clamp(1.25rem, 4vw, 2.5rem) var(--space-md);
   max-width: var(--content-max);
   margin: 0 auto;
 }
 
 .hero-toolbar {
   position: absolute;
-  top: clamp(1rem, 2.5vw, 1.5rem);
+  top: var(--space-xl);
   right: clamp(1.25rem, 4vw, 2.5rem);
   z-index: 2;
   opacity: 0;
@@ -131,7 +131,7 @@
 }
 
 .hero-lead {
-  margin: 0.75rem 0 0;
+  margin: var(--space-md) 0 0;
   /* Was clamp(..., 1.25rem)=20px; at 1280px that overflowed by ~8px onto a 2nd line. */
   font-size: clamp(1rem, 1.55vw, 1.2rem);
   line-height: 1.45;

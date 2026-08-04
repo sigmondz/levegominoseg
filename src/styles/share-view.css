@@ -3,6 +3,6 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.45rem;
+  gap: var(--space-xs);
   flex-shrink: 0;
 }

@@ -383,77 +383,79 @@ export default function App() {
   return (
     <div className="app">
       <Hero data={data} theme={theme} onToggleTheme={toggleTheme} />
-      <MetricFilter metric={metric} onMetricChange={setMetric} />
-      <PeriodFilter
-        parentKey={parentKey}
-        monthSelection={monthSelection}
-        within={within}
-        selectedDay={selectedDay}
-        windowStart={windowStart}
-        customFrom={customFrom}
-        customTo={customTo}
-        dataFromMs={series.meta.fromMs}
-        dataToMs={series.meta.toMs}
-        onParentChange={(parent) => {
-          const bounds = effectivePeriodBounds(
-            parent,
-            "full",
-            series.meta.fromMs,
-            series.meta.toMs,
-          );
-          setParentKey(parent);
-          setMonthSelection("full");
-          resetWithinFields(bounds, series.meta.fromMs, series.meta.toMs, {
-            setWithin,
-            setSelectedDay,
-            setWindowStart,
-            setCustomFrom,
-            setCustomTo,
-          });
-        }}
-        onMonthSelectionChange={(month) => {
-          const bounds = effectivePeriodBounds(
-            parentKey,
-            month,
-            series.meta.fromMs,
-            series.meta.toMs,
-          );
-          setMonthSelection(month);
-          resetWithinFields(bounds, series.meta.fromMs, series.meta.toMs, {
-            setWithin,
-            setSelectedDay,
-            setWindowStart,
-            setCustomFrom,
-            setCustomTo,
-          });
-        }}
-        onWithinChange={(next) => {
-          setWithin(next);
-          if (next === "1d") {
-            setSelectedDay(defaultDay(currentBounds, series.meta.toMs));
-          }
-          if (next === "7d") {
-            setWindowStart(
-              defaultWindow(currentBounds, series.meta.fromMs, 7),
+      <div className="filter-bar">
+        <PeriodFilter
+          parentKey={parentKey}
+          monthSelection={monthSelection}
+          within={within}
+          selectedDay={selectedDay}
+          windowStart={windowStart}
+          customFrom={customFrom}
+          customTo={customTo}
+          dataFromMs={series.meta.fromMs}
+          dataToMs={series.meta.toMs}
+          onParentChange={(parent) => {
+            const bounds = effectivePeriodBounds(
+              parent,
+              "full",
+              series.meta.fromMs,
+              series.meta.toMs,
             );
-          }
-          if (next === "14d") {
-            setWindowStart(
-              defaultWindow(currentBounds, series.meta.fromMs, 14),
+            setParentKey(parent);
+            setMonthSelection("full");
+            resetWithinFields(bounds, series.meta.fromMs, series.meta.toMs, {
+              setWithin,
+              setSelectedDay,
+              setWindowStart,
+              setCustomFrom,
+              setCustomTo,
+            });
+          }}
+          onMonthSelectionChange={(month) => {
+            const bounds = effectivePeriodBounds(
+              parentKey,
+              month,
+              series.meta.fromMs,
+              series.meta.toMs,
             );
-          }
-        }}
-        onSelectedDayChange={setSelectedDay}
-        onWindowStartChange={setWindowStart}
-        onCustomFromChange={(value) => {
-          setCustomFrom(value);
-          setWithin("custom");
-        }}
-        onCustomToChange={(value) => {
-          setCustomTo(value);
-          setWithin("custom");
-        }}
-      />
+            setMonthSelection(month);
+            resetWithinFields(bounds, series.meta.fromMs, series.meta.toMs, {
+              setWithin,
+              setSelectedDay,
+              setWindowStart,
+              setCustomFrom,
+              setCustomTo,
+            });
+          }}
+          onWithinChange={(next) => {
+            setWithin(next);
+            if (next === "1d") {
+              setSelectedDay(defaultDay(currentBounds, series.meta.toMs));
+            }
+            if (next === "7d") {
+              setWindowStart(
+                defaultWindow(currentBounds, series.meta.fromMs, 7),
+              );
+            }
+            if (next === "14d") {
+              setWindowStart(
+                defaultWindow(currentBounds, series.meta.fromMs, 14),
+              );
+            }
+          }}
+          onSelectedDayChange={setSelectedDay}
+          onWindowStartChange={setWindowStart}
+          onCustomFromChange={(value) => {
+            setCustomFrom(value);
+            setWithin("custom");
+          }}
+          onCustomToChange={(value) => {
+            setCustomTo(value);
+            setWithin("custom");
+          }}
+        />
+        <MetricFilter metric={metric} onMetricChange={setMetric} />
+      </div>
       <Stats data={data} />
       <Suspense fallback={<div className="loading">Grafikonok…</div>}>
         <DailyChart

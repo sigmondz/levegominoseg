@@ -96,7 +96,7 @@
   background: var(--bg-elevated);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  padding: 0.9rem 1rem;
+  padding: var(--space-md) 1rem;
   min-height: 0;
   transition: background 0.25s ease;
 }

@@ -31,6 +31,13 @@
   --font-body: "IBM Plex Sans", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --content-max: 1280px;
+  /* Vertical rhythm */
+  --space-xs: 0.35rem; /* tip/icon gaps, tight inline */
+  --space-sm: 0.5rem; /* chips within a row */
+  --space-md: 0.75rem; /* chip rows, section padding, head stacks between controls */
+  --space-head: 1rem; /* title → content / title → first controls */
+  --space-lg: 1rem; /* footer / larger blocks */
+  --space-xl: 1.5rem; /* hero/footer breathing room */
   color-scheme: dark;
 }
 
