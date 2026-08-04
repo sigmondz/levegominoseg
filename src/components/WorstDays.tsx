@@ -35,9 +35,9 @@ export function WorstDays({ daily, metric = "PM2.5", visible, onSelectDay }: Pro
     >
       <div className="section-head">
         <div className="label-with-tip">
-          <p className="section-kicker" id="worst-days-title">
+          <h2 className="section-title" id="worst-days-title">
             Legrosszabb napok
-          </p>
+          </h2>
           <InfoTip label="Mik a legrosszabb napok?" tipId="worst-days-tip">
             A listán a kiválasztott időszak legmagasabb napi max vagy átlag
             értékei látszanak. Egy napra kattintva csak azt a napot nézed a

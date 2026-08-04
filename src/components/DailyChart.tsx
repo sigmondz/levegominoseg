@@ -110,7 +110,6 @@ const MAX_WINDOW_OPTIONS: { id: MaxWindow; label: string }[] = [
 
 type GrainCopy = {
   title: string;
-  kicker: string;
   desc: string;
   seriesTitle: string;
   seriesDesc: string;
@@ -142,7 +141,6 @@ function maxWindowLabel(window: MaxWindow, intervalMin: number): string {
 
 type BucketCopy = {
   title: string;
-  kicker: string;
   desc: (intervalMin: number) => string;
   seriesDesc: (intervalMin: number) => string;
   /** e.g. "nap" / "két nap" / "hét" — used in max tip */
@@ -154,31 +152,28 @@ type BucketCopy = {
 const BUCKET_COPY: Partial<Record<TrendGrain, BucketCopy>> = {
   day: {
     title: "Napi átlag és csúcs",
-    kicker: "Napi aggregáció",
     bucket: "nap",
     bucketInside: "napon belüli",
     desc: (intervalMin) =>
-      `Minden nap a ${intervalMin} perces mean értékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
+      `Minden nap a ${intervalMin} perces átlagértékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
     seriesDesc: (intervalMin) =>
       `Az adott nap összes érvényes ${intervalMin} perces mintájának számtani átlaga. A napi tipikus PM2.5-szintet mutatja: a rövid kiugrások kevésbé húzzák el, mint a nyers görbén. Így napokat hasonlíthatsz össze, és látod, általában milyen volt a terhelés. A grafikonon a folyamatos (nem szaggatott) görbe.`,
   },
   "2d": {
     title: "Kétnapos átlag és csúcs",
-    kicker: "Kétnapos aggregáció",
     bucket: "két nap",
     bucketInside: "két napon belüli",
     desc: (intervalMin) =>
-      `Minden kétnapos blokk a ${intervalMin} perces mean értékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
+      `Minden kétnapos blokk a ${intervalMin} perces átlagértékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
     seriesDesc: (intervalMin) =>
       `Az adott két nap összes érvényes ${intervalMin} perces mintájának számtani átlaga. Sűrűbb, mint a heti nézet, de simább, mint a napi — negyedéves és féléves tartományokban jól követhető. A grafikonon a folyamatos (nem szaggatott) görbe.`,
   },
   week: {
     title: "Heti átlag és csúcs",
-    kicker: "Heti aggregáció",
     bucket: "hét",
     bucketInside: "héten belüli",
     desc: (intervalMin) =>
-      `Minden hét (hétfőtől vasárnapig) a ${intervalMin} perces mean értékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
+      `Minden hét (hétfőtől vasárnapig) a ${intervalMin} perces átlagértékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
     seriesDesc: (intervalMin) =>
       `Az adott hét összes érvényes ${intervalMin} perces mintájának számtani átlaga. A heti tipikus PM2.5-szintet mutatja: a rövid kiugrások és a napi zaj kevésbé húzzák el. Negyedéves vagy féléves nézetben így jól összehasonlíthatók a hetek. A grafikonon a folyamatos (nem szaggatott) görbe.`,
   },
@@ -221,7 +216,6 @@ function grainCopy(
   if (grain === "raw") {
     return {
       title: `${intervalMin} perces mérések`,
-      kicker: "Nyers felbontás",
       desc: `A szenzor ${intervalMin} percenkénti mintái aggregálás nélkül. A szaggatott vonalak a referencia-határértékek.`,
       seriesTitle: "Mért érték (görbe)",
       seriesDesc: `Minden pont egyetlen ${intervalMin} perces szenzorolvasás, aggregálás és simítás nélkül. Így látszik a tényleges időbeli változás: a rövid kiugrások és a csendesebb szakaszok is. Hasznos, ha a pillanatnyi terhelést akarod követni, nem a hosszabb időszaki tipikus szintet. A grafikonon a folyamatos (nem szaggatott) görbe.`,
@@ -232,7 +226,6 @@ function grainCopy(
   if (bucket) {
     return {
       title: bucket.title,
-      kicker: bucket.kicker,
       desc: bucket.desc(intervalMin),
       seriesTitle: "Átlag görbe",
       seriesDesc: bucket.seriesDesc(intervalMin),
@@ -254,8 +247,7 @@ function grainCopy(
 
   return {
     title: `${titlePrefix} átlag és csúcs`,
-    kicker: `${titlePrefix} aggregáció`,
-    desc: `A kiválasztott tartomány ${titlePrefix.toLowerCase()} mean és max értékei a ${intervalMin} perces mintákból.`,
+    desc: `A kiválasztott tartomány ${titlePrefix.toLowerCase()} átlag- és maximumértékei a ${intervalMin} perces mintákból.`,
     seriesTitle: "Átlag görbe",
     seriesDesc: `Az adott ${windowLabel} mért, érvényes ${intervalMin} perces minták számtani átlaga. A tipikus terhelést mutatja ebben az időablakban: a rövid zaj kevésbé látszik, mint a nyers görbén. Így követheted, hogyan alakult a PM2.5 a választott adatsűrűség szerint. A grafikonon a folyamatos (nem szaggatott) görbe.`,
     maxDesc: maxIsRaw
@@ -322,7 +314,6 @@ export function DailyChart({
   return (
     <section className="section" id="napi" aria-labelledby="daily-title">
       <div className="section-head">
-        <p className="section-kicker">{copy.kicker}</p>
         <h2 className="section-title" id="daily-title">
           {copy.title}
         </h2>

@@ -93,7 +93,6 @@ export function Stats({ data }: Props) {
   return (
     <section className="section" id="osszefoglalo" aria-labelledby="stats-title">
       <div className="section-head">
-        <p className="section-kicker">Összefoglaló</p>
         <h2 className="section-title" id="stats-title">
           A kiválasztott időszak számokban
         </h2>

@@ -150,11 +150,18 @@
 
 .hero-lead {
   margin: 0.75rem 0 0;
-  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  /* Was clamp(..., 1.25rem)=20px; at 1280px that overflowed by ~8px onto a 2nd line. */
+  font-size: clamp(1rem, 1.55vw, 1.2rem);
   line-height: 1.45;
   color: var(--text-muted);
   opacity: 0;
   animation: rise 0.8s ease forwards 0.45s;
+}
+
+@media (min-width: 1100px) {
+  .hero-lead {
+    white-space: nowrap;
+  }
 }
 
 .hero-who-threshold {

@@ -41,8 +41,10 @@ export function HourlyChart({ hourly }: Props) {
     <section className="section" id="orankent" aria-labelledby="hourly-title">
       <div className="section-head">
         <div className="label-with-tip">
-          <p className="section-kicker">Napi ritmus</p>
-          <InfoTip label="Mi a napi ritmus?" tipId="hourly-tip">
+          <h2 className="section-title" id="hourly-title">
+            Óránkénti profil
+          </h2>
+          <InfoTip label="Mi az óránkénti profil?" tipId="hourly-tip">
             Nem egyetlen nap idővonala, hanem a napszakok tipikus mintája. Minden
             órához (0–23) összefoglaljuk a kiválasztott időszak összes olyan
             mérését, ami abban az órában készült, és ezek átlagát rajzoljuk.
@@ -50,9 +52,6 @@ export function HourlyChart({ hourly }: Props) {
             PM2.5 — akár egy hét, akár egy hónap alapján.
           </InfoTip>
         </div>
-        <h2 className="section-title" id="hourly-title">
-          Óránkénti profil
-        </h2>
         <p className="section-desc">
           A kiválasztott időszak napjainak óránkénti átlaga (0–23). Rövid
           tartománynál is ugyanígy a napi ritmust mutatja.
