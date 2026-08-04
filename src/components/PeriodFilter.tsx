@@ -84,11 +84,6 @@ export function PeriodFilter({
         <h2 className="section-title" id="period-title">
           Időszak
         </h2>
-        <p className="section-desc">
-          Először válassz hónapot, majd azon belül: teljes hónap, nap, hét, 2
-          hét vagy egyéni tartomány. A nap / hét / 2 hét alatt megjelennek a
-          választható dátumok.
-        </p>
       </div>
 
       {monthPresets.length > 0 ? (
