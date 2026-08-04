@@ -96,6 +96,7 @@ export type MaxWindow =
   | "hour"
   | "2h"
   | "6h"
+  | "12h"
   | "day";
 
 export type PeriodRange = {

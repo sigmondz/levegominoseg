@@ -10,17 +10,20 @@ import {
   listMonthsInParent,
   listParentPresets,
   listWindowsInMonth,
+  listWindowsInPeriod,
   monthBounds,
   parentBounds,
   resolveMaxWindow,
   resolveTrendGrain,
   resolveWithinMonth,
   resolveWithinPeriod,
+  suggestMaxWindow,
   suggestTrendGrain,
   toDateInputValue,
   toMonthKey,
 } from "./aggregate";
 import { TEST_META, TEST_POINTS } from "../test/fixtures";
+import type { PeriodRange } from "./types";
 
 describe("aggregate", () => {
   test("toMonthKey és toDateInputValue", () => {
@@ -103,6 +106,73 @@ describe("aggregate", () => {
     expect(windows[0]!.id).toBe("2026-01-15");
   });
 
+  test("listWindowsInPeriod: január 31 nap — nincs stub maradék chip", () => {
+    const jan: PeriodRange = {
+      fromMs: new Date("2024-01-01T00:00:00").getTime(),
+      toMs: new Date("2024-01-31T23:59:59").getTime(),
+    };
+
+    const weeks = listWindowsInPeriod(jan, 7);
+    expect(weeks).toHaveLength(4);
+    expect(weeks.map((w) => w.id)).toEqual([
+      "2024-01-01",
+      "2024-01-08",
+      "2024-01-15",
+      "2024-01-22",
+    ]);
+    expect(weeks.map((w) => w.label)).toEqual([
+      "01.01.–01.07.",
+      "01.08.–01.14.",
+      "01.15.–01.21.",
+      "01.22.–01.31.",
+    ]);
+    // Ne legyen 01.29.–01.31. stub
+    expect(weeks.some((w) => w.id === "2024-01-29")).toBe(false);
+
+    const twoWeeks = listWindowsInPeriod(jan, 14);
+    expect(twoWeeks).toHaveLength(2);
+    expect(twoWeeks.map((w) => w.id)).toEqual([
+      "2024-01-01",
+      "2024-01-15",
+    ]);
+    expect(twoWeeks.map((w) => w.label)).toEqual([
+      "01.01.–01.14.",
+      "01.15.–01.31.",
+    ]);
+    expect(twoWeeks.some((w) => w.id === "2024-01-29")).toBe(false);
+  });
+
+  test("listWindowsInPeriod: rövid span egyetlen ablak", () => {
+    const short: PeriodRange = {
+      fromMs: new Date("2024-01-29T00:00:00").getTime(),
+      toMs: new Date("2024-01-31T23:59:59").getTime(),
+    };
+    expect(listWindowsInPeriod(short, 7)).toEqual([
+      { id: "2024-01-29", label: "01.29.–01.31." },
+    ]);
+    expect(listWindowsInPeriod(short, 14)).toEqual([
+      { id: "2024-01-29", label: "01.29.–01.31." },
+    ]);
+  });
+
+  test("resolveWithinPeriod utolsó hét a hónap végéig tart", () => {
+    const jan = {
+      fromMs: new Date("2024-01-01T00:00:00").getTime(),
+      toMs: new Date("2024-01-31T23:59:59").getTime(),
+    };
+    const lastWeek = resolveWithinPeriod(jan, "7d", {
+      windowStart: "2024-01-22",
+    });
+    expect(toDateInputValue(lastWeek.fromMs)).toBe("2024-01-22");
+    expect(toDateInputValue(lastWeek.toMs)).toBe("2024-01-31");
+
+    const lastTwo = resolveWithinPeriod(jan, "14d", {
+      windowStart: "2024-01-15",
+    });
+    expect(toDateInputValue(lastTwo.fromMs)).toBe("2024-01-15");
+    expect(toDateInputValue(lastTwo.toMs)).toBe("2024-01-31");
+  });
+
   test("resolveWithinMonth scope-ok", () => {
     const month = "2026-01" as const;
     const full = resolveWithinMonth(
@@ -151,14 +221,27 @@ describe("aggregate", () => {
 
     const long = availableTrendGrains(TEST_META.fromMs, TEST_META.toMs);
     expect(long).toContain("day");
-    expect(long).toContain("week");
+    expect(long).not.toContain("week");
     expect(long).not.toContain("raw");
+
+    const longExt = availableTrendGrains(TEST_META.fromMs, TEST_META.toMs, {
+      extended: true,
+    });
+    expect(longExt).toContain("week");
   });
 
   test("resolveTrendGrain visszaállít érvénytelen grain-re", () => {
     const span = TEST_META.fromMs + 20 * 24 * 60 * 60 * 1000;
     expect(resolveTrendGrain(TEST_META.fromMs, span, "raw")).not.toBe("raw");
     expect(resolveTrendGrain(TEST_META.fromMs, span, "day")).toBe("day");
+    expect(resolveTrendGrain(TEST_META.fromMs, TEST_META.toMs, "week")).toBe(
+      "day",
+    );
+    expect(
+      resolveTrendGrain(TEST_META.fromMs, TEST_META.toMs, "week", {
+        extended: true,
+      }),
+    ).toBe("week");
   });
 
   test("suggestTrendGrain alapértelmezett", () => {
@@ -173,6 +256,13 @@ describe("aggregate", () => {
       suggestTrendGrain(
         TEST_META.fromMs,
         TEST_META.fromMs + 90 * 24 * 60 * 60 * 1000,
+      ),
+    ).toBe("day");
+    expect(
+      suggestTrendGrain(
+        TEST_META.fromMs,
+        TEST_META.fromMs + 90 * 24 * 60 * 60 * 1000,
+        { extended: true },
       ),
     ).toBe("week");
   });
@@ -190,20 +280,36 @@ describe("aggregate", () => {
     expect(resolveMaxWindow("day", 3, "hour")).toBe("hour");
   });
 
+  test("suggestMaxWindow a grainhez igazodik", () => {
+    // Hónap / napi nézet: 3m túl zajos → 1 óra
+    expect(suggestMaxWindow("day", 3)).toBe("hour");
+    expect(suggestMaxWindow("hour", 3)).toBe("30m");
+    expect(suggestMaxWindow("15m", 3)).toBe("6m");
+    expect(suggestMaxWindow("6m", 3)).toBe("3m");
+
+    // Teljes Q/H: hosszabb peak-ablak
+    expect(suggestMaxWindow("day", 3, { extended: true })).toBe("6h");
+    expect(suggestMaxWindow("week", 3, { extended: true })).toBe("day");
+    expect(suggestMaxWindow("hour", 3, { extended: true })).toBe("30m");
+  });
+
   test("extended max ablakok csak extended: true esetén", () => {
     const dayExt = availableMaxWindows("day", 3, { extended: true });
     expect(dayExt).toContain("2h");
     expect(dayExt).toContain("6h");
+    expect(dayExt).toContain("12h");
     expect(dayExt).not.toContain("day");
 
     const weekExt = availableMaxWindows("week", 3, { extended: true });
     expect(weekExt).toContain("2h");
     expect(weekExt).toContain("6h");
+    expect(weekExt).toContain("12h");
     expect(weekExt).toContain("day");
 
-    expect(resolveMaxWindow("day", 3, "2h")).toBe("3m");
-    expect(resolveMaxWindow("day", 3, "2h", { extended: true })).toBe("2h");
+    expect(resolveMaxWindow("day", 3, "2h")).toBe("hour");
+    expect(resolveMaxWindow("day", 3, "12h", { extended: true })).toBe("12h");
     expect(resolveMaxWindow("week", 3, "day", { extended: true })).toBe("day");
+    expect(resolveMaxWindow("day", 3, "day", { extended: true })).toBe("6h");
   });
 
   test("buildSummary statisztikák és trend", () => {

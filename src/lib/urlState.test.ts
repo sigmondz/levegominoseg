@@ -12,7 +12,7 @@ describe("urlState", () => {
   test("buildDefaultViewState ésszerű alapértékek", () => {
     expect(defaults.within).toBe("month");
     expect(defaults.trendGrain).toBe("day");
-    expect(defaults.maxWindow).toBe("3m");
+    expect(defaults.maxWindow).toBe("6h");
     expect(defaults.metric).toBe("PM2.5");
     expect(defaults.parentKey).toBe("2026-Q1");
     expect(defaults.monthSelection).toBe("full");
@@ -24,7 +24,16 @@ describe("urlState", () => {
     expect(view.monthSelection).toBe("full");
     expect(view.within).toBe("month");
     expect(view.trendGrain).toBe("day");
+    expect(view.maxWindow).toBe("6h");
     expect(view.metric).toBe("PM2.5");
+  });
+
+  test("parseViewState hónapnézet max ablak nem 3m", () => {
+    const view = parseViewState("?h=2026-02", TEST_META, defaults);
+    expect(view.monthSelection).toBe("2026-02");
+    // ~10 napos hónapdarab → 2h grain, max ablak 1 óra (nem nyers 3m)
+    expect(view.trendGrain).toBe("2h");
+    expect(view.maxWindow).toBe("hour");
   });
 
   test("parseViewState legacy hónap paraméter", () => {

@@ -17,6 +17,8 @@ import {
   resolveMaxWindow,
   resolveTrendGrain,
   resolveWithinPeriod,
+  suggestMaxWindow,
+  suggestTrendGrain,
   formatDateTime,
   toDateInputValue,
 } from "./lib/aggregate";
@@ -143,6 +145,7 @@ export default function App() {
   const [maxWindow, setMaxWindow] = useState<MaxWindow>("3m");
   const seriesCache = useRef(new Map<MetricId, SeriesFile>());
   const appliedInitialView = useRef(false);
+  const prevExtendedRef = useRef<boolean | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -253,10 +256,26 @@ export default function App() {
 
   useEffect(() => {
     if (!range) return;
+    const extended = monthSelection === "full";
+    const prevExtended = prevExtendedRef.current;
+    prevExtendedRef.current = extended;
+
+    // Összes hónap ↔ konkrét hónap: állítsuk vissza az adott nézet alapértékeire
+    if (prevExtended !== null && prevExtended !== extended) {
+      const grain = suggestTrendGrain(range.fromMs, range.toMs, { extended });
+      setTrendGrain(grain);
+      if (series) {
+        setMaxWindow(
+          suggestMaxWindow(grain, series.meta.intervalMin, { extended }),
+        );
+      }
+      return;
+    }
+
     setTrendGrain((current) =>
-      resolveTrendGrain(range.fromMs, range.toMs, current),
+      resolveTrendGrain(range.fromMs, range.toMs, current, { extended }),
     );
-  }, [range?.fromMs, range?.toMs]);
+  }, [range?.fromMs, range?.toMs, monthSelection, series]);
 
   useEffect(() => {
     if (!series) return;
@@ -304,8 +323,10 @@ export default function App() {
 
   const availableGrains = useMemo(() => {
     if (!range) return [] as TrendGrain[];
-    return availableTrendGrains(range.fromMs, range.toMs);
-  }, [range]);
+    return availableTrendGrains(range.fromMs, range.toMs, {
+      extended: monthSelection === "full",
+    });
+  }, [range, monthSelection]);
 
   const availableMaxWindowOptions = useMemo(() => {
     if (!series) return [] as MaxWindow[];

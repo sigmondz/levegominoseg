@@ -154,7 +154,8 @@
 
 .grain-picker {
   display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.85rem;
   margin-top: 0.85rem;
 }

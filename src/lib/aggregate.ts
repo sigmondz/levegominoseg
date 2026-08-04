@@ -34,7 +34,7 @@ const GRAIN_MS: Partial<Record<TrendGrain, number>> = {
 };
 
 const MAX_WINDOW_BASE: MaxWindow[] = ["3m", "6m", "15m", "30m", "hour"];
-const MAX_WINDOW_EXTENDED: MaxWindow[] = ["2h", "6h", "day"];
+const MAX_WINDOW_EXTENDED: MaxWindow[] = ["2h", "6h", "12h", "day"];
 
 function grainBucketMs(grain: TrendGrain): number | null {
   if (grain === "raw") return null;
@@ -60,6 +60,8 @@ export function maxWindowMs(
       return 2 * HOUR_MS;
     case "6h":
       return 6 * HOUR_MS;
+    case "12h":
+      return 12 * HOUR_MS;
     case "day":
       return DAY_MS;
   }
@@ -79,7 +81,46 @@ export function availableMaxWindows(
   return catalog.filter((w) => maxWindowMs(w, intervalMin) < bucket);
 }
 
-/** Keep current max window if still allowed, otherwise fall back to 3m. */
+/** Default max window scaled to the current trend grain. */
+export function suggestMaxWindow(
+  grain: TrendGrain,
+  intervalMin: number,
+  options?: { extended?: boolean },
+): MaxWindow {
+  const available = availableMaxWindows(grain, intervalMin, options);
+  if (available.length === 0) return "3m";
+
+  // Prefer a peak window that is coarse enough for the chart density:
+  // raw 3m spikes drown daily/weekly views.
+  const preferred: MaxWindow[] =
+    options?.extended === true && grain === "week"
+      ? ["day", "12h", "6h", "2h", "hour"]
+      : options?.extended === true && (grain === "day" || grain.endsWith("h"))
+        ? ["6h", "2h", "hour", "30m", "15m"]
+        : grain === "week"
+          ? ["day", "12h", "6h", "2h", "hour"]
+          : grain === "day"
+            ? ["hour", "30m", "15m"]
+            : grain === "12h" ||
+                grain === "8h" ||
+                grain === "4h" ||
+                grain === "2h"
+              ? ["hour", "30m", "15m"]
+              : grain === "hour"
+                ? ["30m", "15m", "6m"]
+                : grain === "30m"
+                  ? ["15m", "6m", "3m"]
+                  : grain === "15m"
+                    ? ["6m", "3m"]
+                    : ["3m"];
+
+  for (const window of preferred) {
+    if (available.includes(window)) return window;
+  }
+  return available[0]!;
+}
+
+/** Keep current max window if still allowed, otherwise fall back to the default. */
 export function resolveMaxWindow(
   grain: TrendGrain,
   intervalMin: number,
@@ -88,7 +129,9 @@ export function resolveMaxWindow(
 ): MaxWindow {
   const available = availableMaxWindows(grain, intervalMin, options);
   if (available.length === 0) return "3m";
-  return available.includes(current) ? current : "3m";
+  return available.includes(current)
+    ? current
+    : suggestMaxWindow(grain, intervalMin, options);
 }
 
 const MONTH_NAMES_HU = [
@@ -434,7 +477,8 @@ export function listDaysInMonth(
 
 /**
  * Non-overlapping windows inside a period.
- * Fixed-length windows cover the span; the last window absorbs any remainder.
+ * Fixed-length windows cover the span; the last window absorbs any remainder
+ * (no stub chip for leftover days — e.g. January → 4×7d or 2×14d, not 5/3).
  */
 export function listWindowsInPeriod(
   bounds: PeriodRange,
@@ -448,22 +492,25 @@ export function listWindowsInPeriod(
   if (spanDays <= 0) return items;
 
   const fullCount = Math.floor(spanDays / lengthDays);
-  const remainder = spanDays % lengthDays;
+
+  // Shorter than one window: single chip for the whole span
+  if (fullCount === 0) {
+    items.push({
+      id: toDateInputValue(first),
+      label: `${formatShortDay(first)}–${formatShortDay(last)}`,
+    });
+    return items;
+  }
 
   for (let i = 0; i < fullCount; i++) {
     const startMs = first + i * lengthDays * DAY_MS;
-    const endMs = startMs + (lengthDays - 1) * DAY_MS;
+    const endMs =
+      i === fullCount - 1
+        ? last
+        : startMs + (lengthDays - 1) * DAY_MS;
     items.push({
       id: toDateInputValue(startMs),
       label: `${formatShortDay(startMs)}–${formatShortDay(endMs)}`,
-    });
-  }
-
-  if (remainder > 0) {
-    const startMs = first + fullCount * lengthDays * DAY_MS;
-    items.push({
-      id: toDateInputValue(startMs),
-      label: `${formatShortDay(startMs)}–${formatShortDay(last)}`,
     });
   }
 
@@ -562,6 +609,7 @@ function minuteLabel(ms: number): string {
 export function availableTrendGrains(
   fromMs: number,
   toMs: number,
+  options?: { extended?: boolean },
 ): TrendGrain[] {
   const span = Math.max(0, toMs - fromMs);
   if (span <= 36 * HOUR_MS) {
@@ -573,17 +621,24 @@ export function availableTrendGrains(
   if (span <= 16 * DAY_MS) {
     return ["30m", "hour", "2h", "4h", "8h", "12h", "day"];
   }
-  // Quarters / halves: weekly buckets stay readable
-  return ["hour", "2h", "4h", "8h", "12h", "day", "week"];
+  // Weekly buckets only for full Q/H periods
+  if (options?.extended === true) {
+    return ["hour", "2h", "4h", "8h", "12h", "day", "week"];
+  }
+  return ["hour", "2h", "4h", "8h", "12h", "day"];
 }
 
 /** Default chart density for a selected span. */
-export function suggestTrendGrain(fromMs: number, toMs: number): TrendGrain {
+export function suggestTrendGrain(
+  fromMs: number,
+  toMs: number,
+  options?: { extended?: boolean },
+): TrendGrain {
   const span = Math.max(0, toMs - fromMs);
   if (span <= 36 * HOUR_MS) return "15m";
   if (span <= 8 * DAY_MS) return "hour";
   if (span <= 16 * DAY_MS) return "2h";
-  if (span <= 60 * DAY_MS) return "day";
+  if (span <= 60 * DAY_MS || options?.extended !== true) return "day";
   return "week";
 }
 
@@ -592,11 +647,12 @@ export function resolveTrendGrain(
   fromMs: number,
   toMs: number,
   current: TrendGrain,
+  options?: { extended?: boolean },
 ): TrendGrain {
-  const available = availableTrendGrains(fromMs, toMs);
+  const available = availableTrendGrains(fromMs, toMs, options);
   return available.includes(current)
     ? current
-    : suggestTrendGrain(fromMs, toMs);
+    : suggestTrendGrain(fromMs, toMs, options);
 }
 
 function filterPoints(

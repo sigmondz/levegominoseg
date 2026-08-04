@@ -103,6 +103,7 @@ const MAX_WINDOW_OPTIONS: { id: MaxWindow; label: string }[] = [
   { id: "hour", label: "1 óra" },
   { id: "2h", label: "2 óra" },
   { id: "6h", label: "6 óra" },
+  { id: "12h", label: "12 óra" },
   { id: "day", label: "Nap" },
 ];
 
@@ -131,6 +132,8 @@ function maxWindowLabel(window: MaxWindow, intervalMin: number): string {
       return "2 órás";
     case "6h":
       return "6 órás";
+    case "12h":
+      return "12 órás";
     case "day":
       return "napi";
   }

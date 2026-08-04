@@ -11,6 +11,8 @@ import {
   resolveMaxWindow,
   resolveTrendGrain,
   resolveWithinPeriod,
+  suggestMaxWindow,
+  suggestTrendGrain,
   toDateInputValue,
   toQuarterKey,
 } from "./aggregate";
@@ -74,6 +76,7 @@ const MAX_WINDOW_VALUES: MaxWindow[] = [
   "hour",
   "2h",
   "6h",
+  "12h",
   "day",
 ];
 
@@ -141,6 +144,13 @@ export function buildDefaultViewState(meta: DatasetMeta): ViewState {
     meta.fromMs,
     meta.toMs,
   );
+  const extended = true;
+  const trendGrain = suggestTrendGrain(bounds.fromMs, bounds.toMs, {
+    extended,
+  });
+  const maxWindow = suggestMaxWindow(trendGrain, meta.intervalMin, {
+    extended,
+  });
   return {
     metric: DEFAULT_METRIC,
     parentKey,
@@ -150,8 +160,8 @@ export function buildDefaultViewState(meta: DatasetMeta): ViewState {
     windowStart: defaultWindow(bounds, meta.fromMs, 7),
     customFrom: toDateInputValue(bounds.fromMs),
     customTo: toDateInputValue(bounds.toMs),
-    trendGrain: "day",
-    maxWindow: "3m",
+    trendGrain,
+    maxWindow,
   };
 }
 
@@ -256,20 +266,26 @@ export function parseViewState(
   });
 
   const g = params.get("g");
-  const requestedGrain = isGrain(g) ? g : defaults.trendGrain;
+  const extended = monthSelection === "full";
+  const requestedGrain = isGrain(g)
+    ? g
+    : suggestTrendGrain(range.fromMs, range.toMs, { extended });
   const trendGrain = resolveTrendGrain(
     range.fromMs,
     range.toMs,
     requestedGrain,
+    { extended },
   );
 
   const m = params.get("m");
-  const requestedMax = isMaxWindow(m) ? m : defaults.maxWindow;
+  const requestedMax = isMaxWindow(m)
+    ? m
+    : suggestMaxWindow(trendGrain, meta.intervalMin, { extended });
   const maxWindow = resolveMaxWindow(
     trendGrain,
     meta.intervalMin,
     requestedMax,
-    { extended: monthSelection === "full" },
+    { extended },
   );
 
   return {
@@ -325,10 +341,10 @@ export function buildSearchParams(
     params.set("from", state.customFrom);
     params.set("to", state.customTo);
   }
-  if (state.trendGrain !== "day") {
+  if (state.trendGrain !== defaults.trendGrain) {
     params.set("g", state.trendGrain);
   }
-  if (state.maxWindow !== "3m") {
+  if (state.maxWindow !== defaults.maxWindow) {
     params.set("m", state.maxWindow);
   }
 
