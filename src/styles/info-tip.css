@@ -34,6 +34,7 @@
   position: absolute;
   left: 50%;
   bottom: calc(100% + 0.45rem);
+  top: auto;
   z-index: 20;
   width: min(20rem, calc(100vw - 1.5rem));
   max-width: calc(100vw - 1.5rem);
@@ -57,6 +58,11 @@
   transition:
     opacity 0.15s ease,
     visibility 0.15s ease;
+}
+
+.info-tip-bubble.is-below {
+  bottom: auto;
+  top: calc(100% + 0.45rem);
 }
 
 .info-tip--in-card .info-tip-bubble {
