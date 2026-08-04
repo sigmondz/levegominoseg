@@ -5,6 +5,8 @@
   --bg-hover: #162229;
   --fog: rgba(90, 160, 170, 0.14);
   --fog-strong: rgba(125, 255, 168, 0.08);
+  --fog-warm: rgba(255, 179, 71, 0.05);
+  --fog-cool: rgba(94, 200, 255, 0.05);
   --glow-bottom: rgba(255, 92, 77, 0.06);
   --text: #e9f2f4;
   --text-muted: #8aa0a8;
@@ -24,6 +26,7 @@
   --note-bg: rgba(255, 179, 71, 0.06);
   --app-mid: #0e181c;
   --noise-opacity: 0.35;
+  --noise-blend: soft-light;
   --font-display: "Barlow Condensed", sans-serif;
   --font-body: "IBM Plex Sans", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
@@ -31,12 +34,14 @@
 }
 
 [data-theme="light"] {
-  --bg: #f2f6f7;
+  --bg: #e9f0f2;
   --bg-elevated: #ffffff;
-  --bg-hover: #e7eef0;
-  --fog: rgba(90, 160, 170, 0.1);
-  --fog-strong: rgba(90, 200, 140, 0.1);
-  --glow-bottom: rgba(255, 92, 77, 0.045);
+  --bg-hover: #e0e9eb;
+  --fog: rgba(55, 145, 160, 0.28);
+  --fog-strong: rgba(55, 175, 120, 0.22);
+  --fog-warm: rgba(230, 150, 70, 0.16);
+  --fog-cool: rgba(70, 140, 190, 0.14);
+  --glow-bottom: rgba(220, 90, 75, 0.12);
   --text: #121c22;
   --text-muted: #5f747c;
   --line: rgba(18, 28, 34, 0.1);
@@ -53,8 +58,9 @@
   --chart-grid: rgba(18, 28, 34, 0.07);
   --chart-mean: #3a9fc4;
   --note-bg: rgba(212, 137, 42, 0.09);
-  --app-mid: #e8eef1;
-  --noise-opacity: 0.2;
+  --app-mid: #dce8e6;
+  --noise-opacity: 0.32;
+  --noise-blend: multiply;
   color-scheme: light;
 }
 
@@ -109,10 +115,12 @@ a {
   pointer-events: none;
   z-index: -1;
   background:
-    radial-gradient(ellipse 80% 50% at 20% 10%, var(--fog), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 85% 20%, var(--fog-strong), transparent 50%),
-    radial-gradient(ellipse 70% 45% at 50% 100%, var(--glow-bottom), transparent 55%),
-    linear-gradient(180deg, var(--bg) 0%, var(--app-mid) 45%, var(--bg) 100%);
+    radial-gradient(ellipse 75% 48% at 12% 6%, var(--fog), transparent 58%),
+    radial-gradient(ellipse 58% 42% at 90% 10%, var(--fog-strong), transparent 52%),
+    radial-gradient(ellipse 48% 38% at 78% 48%, var(--fog-warm), transparent 55%),
+    radial-gradient(ellipse 55% 42% at 18% 62%, var(--fog-cool), transparent 52%),
+    radial-gradient(ellipse 80% 52% at 48% 108%, var(--glow-bottom), transparent 58%),
+    linear-gradient(168deg, var(--bg) 0%, var(--app-mid) 42%, var(--bg) 100%);
   transition: background 0.25s ease;
 }
 
@@ -124,7 +132,7 @@ a {
   z-index: -1;
   opacity: var(--noise-opacity);
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
-  mix-blend-mode: soft-light;
+  mix-blend-mode: var(--noise-blend);
 }
 
 .hero {
