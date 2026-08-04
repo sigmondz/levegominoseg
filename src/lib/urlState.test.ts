@@ -14,28 +14,47 @@ describe("urlState", () => {
     expect(defaults.trendGrain).toBe("day");
     expect(defaults.maxWindow).toBe("3m");
     expect(defaults.metric).toBe("PM2.5");
-    expect(defaults.monthKey).toMatch(/^\d{4}-\d{2}$/);
+    expect(defaults.parentKey).toBe("2026-Q1");
+    expect(defaults.monthSelection).toBe("full");
   });
 
   test("parseViewState üres URL → default", () => {
     const view = parseViewState("", TEST_META, defaults);
-    expect(view.monthKey).toBe(defaults.monthKey);
+    expect(view.parentKey).toBe(defaults.parentKey);
+    expect(view.monthSelection).toBe("full");
     expect(view.within).toBe("month");
     expect(view.trendGrain).toBe("day");
     expect(view.metric).toBe("PM2.5");
   });
 
-  test("parseViewState hónap és scope paraméterek", () => {
+  test("parseViewState legacy hónap paraméter", () => {
     const view = parseViewState(
       "?h=2026-02&w=1d&d=2026-02-05&g=hour&m=15m",
       TEST_META,
       defaults,
     );
-    expect(view.monthKey).toBe("2026-02");
+    expect(view.parentKey).toBe("2026-Q1");
+    expect(view.monthSelection).toBe("2026-02");
     expect(view.within).toBe("1d");
     expect(view.selectedDay).toBe("2026-02-05");
     expect(view.trendGrain).toBe("hour");
     expect(view.maxWindow).toBe("15m");
+  });
+
+  test("parseViewState szülő Q/H kulcs", () => {
+    const view = parseViewState("?h=2026-H1", TEST_META, defaults);
+    expect(view.parentKey).toBe("2026-H1");
+    expect(view.monthSelection).toBe("full");
+  });
+
+  test("parseViewState szülő + hónap", () => {
+    const view = parseViewState(
+      "?h=2026-H1&hm=2026-02",
+      TEST_META,
+      defaults,
+    );
+    expect(view.parentKey).toBe("2026-H1");
+    expect(view.monthSelection).toBe("2026-02");
   });
 
   test("parseViewState metric paraméter", () => {
@@ -55,6 +74,7 @@ describe("urlState", () => {
       TEST_META,
       defaults,
     );
+    expect(view.monthSelection).toBe("2026-01");
     expect(view.within).toBe("custom");
     expect(view.customFrom).toBe("2026-01-18");
     expect(view.customTo).toBe("2026-01-22");
@@ -66,7 +86,8 @@ describe("urlState", () => {
       TEST_META,
       defaults,
     );
-    expect(view.monthKey).toBe(defaults.monthKey);
+    expect(view.parentKey).toBe(defaults.parentKey);
+    expect(view.monthSelection).toBe(defaults.monthSelection);
     expect(view.within).toBe("month");
   });
 
@@ -77,7 +98,7 @@ describe("urlState", () => {
     const custom = {
       ...defaults,
       metric: "PM1" as const,
-      monthKey: "2026-02" as const,
+      monthSelection: "2026-02" as const,
       within: "7d" as const,
       windowStart: "2026-02-01",
       trendGrain: "hour" as const,
@@ -90,5 +111,16 @@ describe("urlState", () => {
     expect(built.get("d")).toBe("2026-02-01");
     expect(built.get("g")).toBe("hour");
     expect(built.get("m")).toBe("15m");
+  });
+
+  test("buildSearchParams H1 szülő", () => {
+    const custom = {
+      ...defaults,
+      parentKey: "2026-H1" as const,
+      monthSelection: "full" as const,
+    };
+    const built = buildSearchParams(custom, defaults);
+    expect(built.get("h")).toBe("2026-H1");
+    expect(built.get("hm")).toBeNull();
   });
 });

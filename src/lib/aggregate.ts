@@ -1,10 +1,14 @@
 import type {
   DailyPoint,
   DatasetMeta,
+  HalfKey,
   HourlyPoint,
   MaxWindow,
   MonthKey,
+  MonthSelection,
+  ParentPeriodKey,
   PeriodRange,
+  QuarterKey,
   SeriesEntry,
   Summary,
   TrendGrain,
@@ -97,13 +101,75 @@ export function toMonthKey(year: number, month: number): MonthKey {
 }
 
 export function parseMonthKey(
-  key: MonthKey,
+  key: string,
 ): { year: number; month: number } | null {
-  const [ys, ms] = key.split("-");
-  const year = Number(ys);
-  const month = Number(ms);
+  const match = /^(\d{4})-(\d{2})$/.exec(key);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
   if (!year || !month || month < 1 || month > 12) return null;
   return { year, month };
+}
+
+export function toQuarterKey(year: number, quarter: 1 | 2 | 3 | 4): QuarterKey {
+  return `${year}-Q${quarter}` as QuarterKey;
+}
+
+export function toHalfKey(year: number, half: 1 | 2): HalfKey {
+  return `${year}-H${half}` as HalfKey;
+}
+
+export function parseParentKey(
+  key: string,
+):
+  | { kind: "quarter"; year: number; quarter: 1 | 2 | 3 | 4 }
+  | { kind: "half"; year: number; half: 1 | 2 }
+  | null {
+  const q = /^(\d{4})-Q([1-4])$/.exec(key);
+  if (q) {
+    return {
+      kind: "quarter",
+      year: Number(q[1]),
+      quarter: Number(q[2]) as 1 | 2 | 3 | 4,
+    };
+  }
+  const h = /^(\d{4})-H([12])$/.exec(key);
+  if (h) {
+    return {
+      kind: "half",
+      year: Number(h[1]),
+      half: Number(h[2]) as 1 | 2,
+    };
+  }
+  return null;
+}
+
+/** Quarter containing a calendar month (1–12). */
+export function quarterOfMonth(month: number): 1 | 2 | 3 | 4 {
+  return Math.ceil(month / 3) as 1 | 2 | 3 | 4;
+}
+
+function parentCalendarRange(key: ParentPeriodKey): PeriodRange | null {
+  const parsed = parseParentKey(key);
+  if (!parsed) return null;
+  if (parsed.kind === "quarter") {
+    const startMonth = (parsed.quarter - 1) * 3; // 0-based
+    const from = startOfLocalDay(
+      new Date(parsed.year, startMonth, 1).getTime(),
+    );
+    const to = endOfLocalDay(
+      new Date(parsed.year, startMonth + 3, 0).getTime(),
+    );
+    return { fromMs: from, toMs: to };
+  }
+  const startMonth = parsed.half === 1 ? 0 : 6;
+  const from = startOfLocalDay(new Date(parsed.year, startMonth, 1).getTime());
+  const to = endOfLocalDay(new Date(parsed.year, startMonth + 6, 0).getTime());
+  return { fromMs: from, toMs: to };
+}
+
+function rangesOverlap(a: PeriodRange, b: PeriodRange): boolean {
+  return a.fromMs <= b.toMs && a.toMs >= b.fromMs;
 }
 
 export function listMonthPresets(
@@ -131,6 +197,49 @@ export function listMonthPresets(
     }
   }
   return items;
+}
+
+/**
+ * Parent presets overlapping data: per year Q1–Q4, then H1, H2.
+ * Labels: "2026 Q1", "2026 H1".
+ */
+export function listParentPresets(
+  fromMs: number,
+  toMs: number,
+): { id: ParentPeriodKey; label: string }[] {
+  const dataRange = { fromMs, toMs };
+  const startY = new Date(fromMs).getFullYear();
+  const endY = new Date(toMs).getFullYear();
+  const items: { id: ParentPeriodKey; label: string }[] = [];
+
+  for (let year = startY; year <= endY; year++) {
+    const candidates: ParentPeriodKey[] = [
+      toQuarterKey(year, 1),
+      toQuarterKey(year, 2),
+      toQuarterKey(year, 3),
+      toQuarterKey(year, 4),
+      toHalfKey(year, 1),
+      toHalfKey(year, 2),
+    ];
+    for (const id of candidates) {
+      const cal = parentCalendarRange(id);
+      if (cal && rangesOverlap(cal, dataRange)) {
+        const label = id.replace("-", " ");
+        items.push({ id, label });
+      }
+    }
+  }
+  return items;
+}
+
+/** Months inside a parent period, clipped to available data. */
+export function listMonthsInParent(
+  parentKey: ParentPeriodKey,
+  dataFromMs: number,
+  dataToMs: number,
+): { id: MonthKey; label: string }[] {
+  const bounds = parentBounds(parentKey, dataFromMs, dataToMs);
+  return listMonthPresets(bounds.fromMs, bounds.toMs);
 }
 
 export function formatDateTime(ms: number): string {
@@ -177,15 +286,42 @@ export function monthBounds(
   };
 }
 
-/**
- * Resolve filter inside a selected month.
- * For 1d / 7d / 14d, pass the chosen window start date (YYYY-MM-DD).
- */
-export function resolveWithinMonth(
-  monthKey: MonthKey,
-  scope: WithinMonthScope,
+/** Parent (quarter / half) clipped to available data. */
+export function parentBounds(
+  parentKey: ParentPeriodKey,
   dataFromMs: number,
   dataToMs: number,
+): PeriodRange {
+  const cal = parentCalendarRange(parentKey);
+  if (!cal) {
+    return { fromMs: dataFromMs, toMs: dataToMs };
+  }
+  return {
+    fromMs: Math.max(dataFromMs, cal.fromMs),
+    toMs: Math.min(dataToMs, cal.toMs),
+  };
+}
+
+/** Effective range from parent + month row selection. */
+export function effectivePeriodBounds(
+  parentKey: ParentPeriodKey,
+  monthSelection: MonthSelection,
+  dataFromMs: number,
+  dataToMs: number,
+): PeriodRange {
+  if (monthSelection === "full") {
+    return parentBounds(parentKey, dataFromMs, dataToMs);
+  }
+  return monthBounds(monthSelection, dataFromMs, dataToMs);
+}
+
+/**
+ * Resolve filter inside an effective period.
+ * For 1d / 7d / 14d, pass the chosen window start date (YYYY-MM-DD).
+ */
+export function resolveWithinPeriod(
+  bounds: PeriodRange,
+  scope: WithinMonthScope,
   options?: {
     selectedDay?: string;
     windowStart?: string;
@@ -193,8 +329,6 @@ export function resolveWithinMonth(
     customTo?: string;
   },
 ): PeriodRange {
-  const bounds = monthBounds(monthKey, dataFromMs, dataToMs);
-
   if (scope === "1d") {
     const day = options?.selectedDay ?? toDateInputValue(bounds.toMs);
     const from = startOfLocalDay(new Date(`${day}T00:00:00`).getTime());
@@ -207,11 +341,13 @@ export function resolveWithinMonth(
 
   if (scope === "7d" || scope === "14d") {
     const days = scope === "7d" ? 7 : 14;
-    const windows = listWindowsInMonth(monthKey, dataFromMs, dataToMs, days);
-    const startKey = options?.windowStart ?? windows.at(-1)?.id ?? toDateInputValue(bounds.fromMs);
+    const windows = listWindowsInPeriod(bounds, days);
+    const startKey =
+      options?.windowStart ??
+      windows.at(-1)?.id ??
+      toDateInputValue(bounds.fromMs);
     const from = startOfLocalDay(new Date(`${startKey}T00:00:00`).getTime());
     const idx = windows.findIndex((w) => w.id === startKey);
-    // Last window absorbs remaining days through month end; earlier ones stay fixed length.
     const to =
       idx >= 0 && idx === windows.length - 1
         ? bounds.toMs
@@ -222,11 +358,7 @@ export function resolveWithinMonth(
     };
   }
 
-  if (
-    scope === "custom" &&
-    options?.customFrom &&
-    options?.customTo
-  ) {
+  if (scope === "custom" && options?.customFrom && options?.customTo) {
     const from = startOfLocalDay(
       new Date(`${options.customFrom}T00:00:00`).getTime(),
     );
@@ -242,13 +374,30 @@ export function resolveWithinMonth(
   return bounds;
 }
 
-/** Calendar days available inside the month (clipped to data). */
-export function listDaysInMonth(
+/** Resolve filter inside a selected month (wrapper around resolveWithinPeriod). */
+export function resolveWithinMonth(
   monthKey: MonthKey,
+  scope: WithinMonthScope,
   dataFromMs: number,
   dataToMs: number,
+  options?: {
+    selectedDay?: string;
+    windowStart?: string;
+    customFrom?: string;
+    customTo?: string;
+  },
+): PeriodRange {
+  return resolveWithinPeriod(
+    monthBounds(monthKey, dataFromMs, dataToMs),
+    scope,
+    options,
+  );
+}
+
+/** Calendar days available inside a period (clipped to data). */
+export function listDaysInPeriod(
+  bounds: PeriodRange,
 ): { id: string; label: string }[] {
-  const bounds = monthBounds(monthKey, dataFromMs, dataToMs);
   const items: { id: string; label: string }[] = [];
   let cursor = startOfLocalDay(bounds.fromMs);
   const end = startOfLocalDay(bounds.toMs);
@@ -264,18 +413,22 @@ export function listDaysInMonth(
   return items;
 }
 
-/**
- * Non-overlapping windows inside the month.
- * 7d → at most 4 (first three are 7 days, last gets the remainder).
- * 14d → at most 2 (first 14 days, last gets the remainder).
- */
-export function listWindowsInMonth(
+export function listDaysInMonth(
   monthKey: MonthKey,
   dataFromMs: number,
   dataToMs: number,
+): { id: string; label: string }[] {
+  return listDaysInPeriod(monthBounds(monthKey, dataFromMs, dataToMs));
+}
+
+/**
+ * Non-overlapping windows inside a period.
+ * Fixed-length windows cover the span; the last window absorbs any remainder.
+ */
+export function listWindowsInPeriod(
+  bounds: PeriodRange,
   lengthDays: 7 | 14,
 ): { id: string; label: string }[] {
-  const bounds = monthBounds(monthKey, dataFromMs, dataToMs);
   const items: { id: string; label: string }[] = [];
   const first = startOfLocalDay(bounds.fromMs);
   const last = startOfLocalDay(bounds.toMs);
@@ -283,14 +436,8 @@ export function listWindowsInMonth(
 
   if (spanDays <= 0) return items;
 
-  const maxWindows = lengthDays === 7 ? 4 : 2;
-  let fullCount = Math.min(maxWindows - 1, Math.floor(spanDays / lengthDays));
-  const coveredByFull = fullCount * lengthDays;
-
-  // If full windows already cover the whole span, emit only those (no empty remainder).
-  if (coveredByFull >= spanDays) {
-    fullCount = Math.floor(spanDays / lengthDays);
-  }
+  const fullCount = Math.floor(spanDays / lengthDays);
+  const remainder = spanDays % lengthDays;
 
   for (let i = 0; i < fullCount; i++) {
     const startMs = first + i * lengthDays * DAY_MS;
@@ -301,7 +448,7 @@ export function listWindowsInMonth(
     });
   }
 
-  if (fullCount * lengthDays < spanDays) {
+  if (remainder > 0) {
     const startMs = first + fullCount * lengthDays * DAY_MS;
     items.push({
       id: toDateInputValue(startMs),
@@ -310,6 +457,36 @@ export function listWindowsInMonth(
   }
 
   return items;
+}
+
+export function listWindowsInMonth(
+  monthKey: MonthKey,
+  dataFromMs: number,
+  dataToMs: number,
+  lengthDays: 7 | 14,
+): { id: string; label: string }[] {
+  return listWindowsInPeriod(
+    monthBounds(monthKey, dataFromMs, dataToMs),
+    lengthDays,
+  );
+}
+
+/** Default parent = quarter containing the preferred default month. */
+export function defaultParentKey(
+  fromMs: number,
+  toMs: number,
+): ParentPeriodKey {
+  const months = listMonthPresets(fromMs, toMs);
+  const january = months.find((m) => m.id.endsWith("-01"));
+  const monthKey =
+    january?.id ??
+    months[0]?.id ??
+    toMonthKey(new Date(fromMs).getFullYear(), new Date(fromMs).getMonth() + 1);
+  const parsed = parseMonthKey(monthKey);
+  if (!parsed) {
+    return toQuarterKey(new Date(fromMs).getFullYear(), 1);
+  }
+  return toQuarterKey(parsed.year, quarterOfMonth(parsed.month));
 }
 
 function formatShortDay(ms: number): string {

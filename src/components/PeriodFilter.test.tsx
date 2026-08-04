@@ -5,7 +5,8 @@ import { PeriodFilter } from "./PeriodFilter";
 import { TEST_META } from "../test/fixtures";
 
 const baseProps = {
-  monthKey: "2026-01" as const,
+  parentKey: "2026-Q1" as const,
+  monthSelection: "full" as const,
   within: "month" as const,
   selectedDay: "2026-01-20",
   windowStart: "2026-01-15",
@@ -13,7 +14,8 @@ const baseProps = {
   customTo: "2026-01-31",
   dataFromMs: TEST_META.fromMs,
   dataToMs: TEST_META.toMs,
-  onMonthChange: mock(() => {}),
+  onParentChange: mock(() => {}),
+  onMonthSelectionChange: mock(() => {}),
   onWithinChange: mock(() => {}),
   onSelectedDayChange: mock(() => {}),
   onWindowStartChange: mock(() => {}),
@@ -22,25 +24,46 @@ const baseProps = {
 };
 
 describe("PeriodFilter", () => {
-  test("hónap chip-ek megjelennek és kattinthatók", async () => {
+  test("szülő chip-ek megjelennek és kattinthatók", async () => {
     const user = userEvent.setup();
-    const onMonthChange = mock(() => {});
+    const onParentChange = mock(() => {});
 
     const { getByRole } = render(
-      <PeriodFilter {...baseProps} onMonthChange={onMonthChange} />,
+      <PeriodFilter {...baseProps} onParentChange={onParentChange} />,
     );
 
-    const jan = getByRole("button", { name: /2026 január/i });
-    const feb = getByRole("button", { name: /2026 február/i });
+    const q1 = getByRole("button", { name: "2026 Q1" });
+    const h1 = getByRole("button", { name: "2026 H1" });
 
-    expect(jan).toHaveAttribute("aria-pressed", "true");
-    expect(feb).toHaveAttribute("aria-pressed", "false");
+    expect(q1).toHaveAttribute("aria-pressed", "true");
+    expect(h1).toHaveAttribute("aria-pressed", "false");
 
-    await user.click(feb);
-    expect(onMonthChange).toHaveBeenCalledWith("2026-02");
+    await user.click(h1);
+    expect(onParentChange).toHaveBeenCalledWith("2026-H1");
   });
 
-  test("scope gombok (Teljes hónap, Nap, Hét, stb.)", async () => {
+  test("hónap chip-ek a szülőn belül + Összes hónap", async () => {
+    const user = userEvent.setup();
+    const onMonthSelectionChange = mock(() => {});
+
+    const { getByRole } = render(
+      <PeriodFilter
+        {...baseProps}
+        onMonthSelectionChange={onMonthSelectionChange}
+      />,
+    );
+
+    expect(getByRole("button", { name: "Összes hónap" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    const feb = getByRole("button", { name: /2026 február/i });
+    await user.click(feb);
+    expect(onMonthSelectionChange).toHaveBeenCalledWith("2026-02");
+  });
+
+  test("scope gombok (Összes nap, Nap, Hét, stb.)", async () => {
     const user = userEvent.setup();
     const onWithinChange = mock(() => {});
 
@@ -68,6 +91,7 @@ describe("PeriodFilter", () => {
     const { getByRole } = render(
       <PeriodFilter
         {...baseProps}
+        monthSelection="2026-01"
         within="1d"
         onSelectedDayChange={onSelectedDayChange}
       />,
@@ -84,6 +108,7 @@ describe("PeriodFilter", () => {
     const { getAllByRole } = render(
       <PeriodFilter
         {...baseProps}
+        monthSelection="2026-01"
         within="7d"
         onWindowStartChange={onWindowStartChange}
       />,

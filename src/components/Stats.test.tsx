@@ -24,6 +24,7 @@ describe("Stats", () => {
     expect(getByText("≥ 80 µg/m³")).toBeInTheDocument();
     expect(getByText(`${summary.mean.toFixed(1)}`)).toBeInTheDocument();
     expect(getByText("WHO érték felett")).toBeInTheDocument();
+    expect(document.querySelector(".stat--featured")).toBeTruthy();
     expect(
       getByText((_, el) => {
         return (
@@ -32,6 +33,8 @@ describe("Stats", () => {
         );
       }),
     ).toBeInTheDocument();
+    const cards = document.querySelectorAll(".stat");
+    expect(cards[0]?.textContent).toContain("WHO érték felett");
   });
 
   test("egynapos tartománynál nincs WHO feletti napok kártya", () => {

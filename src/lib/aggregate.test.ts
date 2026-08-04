@@ -3,13 +3,19 @@ import {
   availableMaxWindows,
   availableTrendGrains,
   buildSummary,
+  defaultParentKey,
+  effectivePeriodBounds,
   listDaysInMonth,
   listMonthPresets,
+  listMonthsInParent,
+  listParentPresets,
   listWindowsInMonth,
   monthBounds,
+  parentBounds,
   resolveMaxWindow,
   resolveTrendGrain,
   resolveWithinMonth,
+  resolveWithinPeriod,
   suggestTrendGrain,
   toDateInputValue,
   toMonthKey,
@@ -28,6 +34,49 @@ describe("aggregate", () => {
     expect(months.length).toBeGreaterThanOrEqual(2);
     expect(months.some((m) => m.id === "2026-01")).toBe(true);
     expect(months.some((m) => m.id === "2026-02")).toBe(true);
+  });
+
+  test("listParentPresets Q majd H sorrendben, csak átfedők", () => {
+    const parents = listParentPresets(TEST_META.fromMs, TEST_META.toMs);
+    expect(parents.map((p) => p.id)).toEqual(["2026-Q1", "2026-H1"]);
+    expect(parents[0]!.label).toBe("2026 Q1");
+    expect(parents[1]!.label).toBe("2026 H1");
+  });
+
+  test("defaultParentKey a default hónap negyedéve", () => {
+    expect(defaultParentKey(TEST_META.fromMs, TEST_META.toMs)).toBe("2026-Q1");
+  });
+
+  test("parentBounds és effectivePeriodBounds", () => {
+    const q1 = parentBounds("2026-Q1", TEST_META.fromMs, TEST_META.toMs);
+    expect(toDateInputValue(q1.fromMs)).toBe("2026-01-15");
+    expect(toDateInputValue(q1.toMs)).toBe("2026-02-10");
+
+    const full = effectivePeriodBounds(
+      "2026-Q1",
+      "full",
+      TEST_META.fromMs,
+      TEST_META.toMs,
+    );
+    expect(full).toEqual(q1);
+
+    const feb = effectivePeriodBounds(
+      "2026-Q1",
+      "2026-02",
+      TEST_META.fromMs,
+      TEST_META.toMs,
+    );
+    expect(toDateInputValue(feb.fromMs)).toBe("2026-02-01");
+    expect(toDateInputValue(feb.toMs)).toBe("2026-02-10");
+  });
+
+  test("listMonthsInParent a szülő hónapjait adja", () => {
+    const months = listMonthsInParent(
+      "2026-Q1",
+      TEST_META.fromMs,
+      TEST_META.toMs,
+    );
+    expect(months.map((m) => m.id)).toEqual(["2026-01", "2026-02"]);
   });
 
   test("monthBounds levágja az adathoz", () => {
@@ -83,6 +132,13 @@ describe("aggregate", () => {
     );
     expect(toDateInputValue(custom.fromMs)).toBe("2026-01-18");
     expect(toDateInputValue(custom.toMs)).toBe("2026-01-22");
+  });
+
+  test("resolveWithinPeriod teljes szülőn", () => {
+    const bounds = parentBounds("2026-H1", TEST_META.fromMs, TEST_META.toMs);
+    const full = resolveWithinPeriod(bounds, "month");
+    expect(toDateInputValue(full.fromMs)).toBe("2026-01-15");
+    expect(toDateInputValue(full.toMs)).toBe("2026-02-10");
   });
 
   test("availableTrendGrains span alapján", () => {

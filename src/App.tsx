@@ -9,13 +9,14 @@ import {
   availableMaxWindows,
   availableTrendGrains,
   buildSummary,
-  listDaysInMonth,
-  listMonthPresets,
-  listWindowsInMonth,
-  monthBounds,
+  defaultParentKey,
+  effectivePeriodBounds,
+  listDaysInPeriod,
+  listParentPresets,
+  listWindowsInPeriod,
   resolveMaxWindow,
   resolveTrendGrain,
-  resolveWithinMonth,
+  resolveWithinPeriod,
   formatDateTime,
   toDateInputValue,
 } from "./lib/aggregate";
@@ -28,7 +29,9 @@ import {
 import type {
   MaxWindow,
   MetricId,
-  MonthKey,
+  MonthSelection,
+  ParentPeriodKey,
+  PeriodRange,
   SeriesFile,
   TrendGrain,
   WithinMonthScope,
@@ -52,30 +55,45 @@ const HourlyChart = lazy(async () => {
   return { default: mod.HourlyChart };
 });
 
-function defaultDay(
-  month: MonthKey,
-  dataFromMs: number,
-  dataToMs: number,
-): string {
-  const days = listDaysInMonth(month, dataFromMs, dataToMs);
+function defaultDay(bounds: PeriodRange, dataToMs: number): string {
+  const days = listDaysInPeriod(bounds);
   return days.at(-1)?.id ?? toDateInputValue(dataToMs);
 }
 
 function defaultWindow(
-  month: MonthKey,
+  bounds: PeriodRange,
   dataFromMs: number,
-  dataToMs: number,
   length: 7 | 14,
 ): string {
-  const windows = listWindowsInMonth(month, dataFromMs, dataToMs, length);
+  const windows = listWindowsInPeriod(bounds, length);
   return windows.at(-1)?.id ?? toDateInputValue(dataFromMs);
+}
+
+function resetWithinFields(
+  bounds: PeriodRange,
+  dataFromMs: number,
+  dataToMs: number,
+  setters: {
+    setWithin: (v: WithinMonthScope) => void;
+    setSelectedDay: (v: string) => void;
+    setWindowStart: (v: string) => void;
+    setCustomFrom: (v: string) => void;
+    setCustomTo: (v: string) => void;
+  },
+) {
+  setters.setWithin("month");
+  setters.setSelectedDay(defaultDay(bounds, dataToMs));
+  setters.setWindowStart(defaultWindow(bounds, dataFromMs, 7));
+  setters.setCustomFrom(toDateInputValue(bounds.fromMs));
+  setters.setCustomTo(toDateInputValue(bounds.toMs));
 }
 
 function applyViewState(
   view: ViewState,
   setters: {
     setMetric: (v: MetricId) => void;
-    setMonthKey: (v: MonthKey) => void;
+    setParentKey: (v: ParentPeriodKey) => void;
+    setMonthSelection: (v: MonthSelection) => void;
     setWithin: (v: WithinMonthScope) => void;
     setSelectedDay: (v: string) => void;
     setWindowStart: (v: string) => void;
@@ -86,7 +104,8 @@ function applyViewState(
   },
 ) {
   setters.setMetric(view.metric);
-  setters.setMonthKey(view.monthKey);
+  setters.setParentKey(view.parentKey);
+  setters.setMonthSelection(view.monthSelection);
   setters.setWithin(view.within);
   setters.setSelectedDay(view.selectedDay);
   setters.setWindowStart(view.windowStart);
@@ -112,7 +131,9 @@ export default function App() {
   const [metric, setMetric] = useState<MetricId>(initialMetricFromUrl);
   const [series, setSeries] = useState<SeriesFile | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [monthKey, setMonthKey] = useState<MonthKey | null>(null);
+  const [parentKey, setParentKey] = useState<ParentPeriodKey | null>(null);
+  const [monthSelection, setMonthSelection] =
+    useState<MonthSelection>("full");
   const [within, setWithin] = useState<WithinMonthScope>("month");
   const [selectedDay, setSelectedDay] = useState("");
   const [windowStart, setWindowStart] = useState("");
@@ -148,7 +169,8 @@ export default function App() {
           const view = parseViewState(readSearch(), json.meta, defaults);
           applyViewState(view, {
             setMetric,
-            setMonthKey,
+            setParentKey,
+            setMonthSelection,
             setWithin,
             setSelectedDay,
             setWindowStart,
@@ -160,16 +182,13 @@ export default function App() {
           return;
         }
 
-        const months = listMonthPresets(json.meta.fromMs, json.meta.toMs);
-        const monthIds = new Set(months.map((m) => m.id));
-        setMonthKey((current) => {
-          if (current && monthIds.has(current)) return current;
-          return (
-            months.find((m) => m.id.endsWith("-01"))?.id ??
-            months[0]?.id ??
-            current
-          );
+        const parents = listParentPresets(json.meta.fromMs, json.meta.toMs);
+        const parentIds = new Set(parents.map((p) => p.id));
+        setParentKey((current) => {
+          if (current && parentIds.has(current)) return current;
+          return defaultParentKey(json!.meta.fromMs, json!.meta.toMs);
         });
+        setMonthSelection("full");
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Ismeretlen hiba");
@@ -191,7 +210,8 @@ export default function App() {
       const view = parseViewState(readSearch(), series!.meta, defaults);
       applyViewState(view, {
         setMetric,
-        setMonthKey,
+        setParentKey,
+        setMonthSelection,
         setWithin,
         setSelectedDay,
         setWindowStart,
@@ -207,22 +227,23 @@ export default function App() {
   }, [series]);
 
   const range = useMemo(() => {
-    if (!series || !monthKey) return null;
-    return resolveWithinMonth(
-      monthKey,
-      within,
+    if (!series || !parentKey) return null;
+    const bounds = effectivePeriodBounds(
+      parentKey,
+      monthSelection,
       series.meta.fromMs,
       series.meta.toMs,
-      {
-        selectedDay,
-        windowStart,
-        customFrom,
-        customTo,
-      },
     );
+    return resolveWithinPeriod(bounds, within, {
+      selectedDay,
+      windowStart,
+      customFrom,
+      customTo,
+    });
   }, [
     series,
-    monthKey,
+    parentKey,
+    monthSelection,
     within,
     selectedDay,
     windowStart,
@@ -250,10 +271,11 @@ export default function App() {
   );
 
   useEffect(() => {
-    if (!series || !monthKey || !urlDefaults) return;
+    if (!series || !parentKey || !urlDefaults) return;
     const state: ViewState = {
       metric,
-      monthKey,
+      parentKey,
+      monthSelection,
       within,
       selectedDay,
       windowStart,
@@ -266,7 +288,8 @@ export default function App() {
   }, [
     series,
     metric,
-    monthKey,
+    parentKey,
+    monthSelection,
     within,
     selectedDay,
     windowStart,
@@ -314,12 +337,19 @@ export default function App() {
     );
   }
 
-  if (!series || !data || !monthKey) {
+  if (!series || !data || !parentKey) {
     return <div className="loading">Adatok betöltése…</div>;
   }
 
   const dataFrom = toDateInputValue(series.meta.fromMs);
   const lastMeasurement = formatDateTime(series.meta.toMs).slice(0, 16);
+
+  const currentBounds = effectivePeriodBounds(
+    parentKey,
+    monthSelection,
+    series.meta.fromMs,
+    series.meta.toMs,
+  );
 
   return (
     <div className="app">
@@ -332,7 +362,8 @@ export default function App() {
       />
       <MetricFilter metric={metric} onMetricChange={setMetric} />
       <PeriodFilter
-        monthKey={monthKey}
+        parentKey={parentKey}
+        monthSelection={monthSelection}
         within={within}
         selectedDay={selectedDay}
         windowStart={windowStart}
@@ -340,38 +371,52 @@ export default function App() {
         customTo={customTo}
         dataFromMs={series.meta.fromMs}
         dataToMs={series.meta.toMs}
-        onMonthChange={(month) => {
-          const bounds = monthBounds(
+        onParentChange={(parent) => {
+          const bounds = effectivePeriodBounds(
+            parent,
+            "full",
+            series.meta.fromMs,
+            series.meta.toMs,
+          );
+          setParentKey(parent);
+          setMonthSelection("full");
+          resetWithinFields(bounds, series.meta.fromMs, series.meta.toMs, {
+            setWithin,
+            setSelectedDay,
+            setWindowStart,
+            setCustomFrom,
+            setCustomTo,
+          });
+        }}
+        onMonthSelectionChange={(month) => {
+          const bounds = effectivePeriodBounds(
+            parentKey,
             month,
             series.meta.fromMs,
             series.meta.toMs,
           );
-          setMonthKey(month);
-          setWithin("month");
-          setSelectedDay(
-            defaultDay(month, series.meta.fromMs, series.meta.toMs),
-          );
-          setWindowStart(
-            defaultWindow(month, series.meta.fromMs, series.meta.toMs, 7),
-          );
-          setCustomFrom(toDateInputValue(bounds.fromMs));
-          setCustomTo(toDateInputValue(bounds.toMs));
+          setMonthSelection(month);
+          resetWithinFields(bounds, series.meta.fromMs, series.meta.toMs, {
+            setWithin,
+            setSelectedDay,
+            setWindowStart,
+            setCustomFrom,
+            setCustomTo,
+          });
         }}
         onWithinChange={(next) => {
           setWithin(next);
           if (next === "1d") {
-            setSelectedDay(
-              defaultDay(monthKey, series.meta.fromMs, series.meta.toMs),
-            );
+            setSelectedDay(defaultDay(currentBounds, series.meta.toMs));
           }
           if (next === "7d") {
             setWindowStart(
-              defaultWindow(monthKey, series.meta.fromMs, series.meta.toMs, 7),
+              defaultWindow(currentBounds, series.meta.fromMs, 7),
             );
           }
           if (next === "14d") {
             setWindowStart(
-              defaultWindow(monthKey, series.meta.fromMs, series.meta.toMs, 14),
+              defaultWindow(currentBounds, series.meta.fromMs, 14),
             );
           }
         }}

@@ -1,14 +1,18 @@
 import {
-  listDaysInMonth,
-  listMonthPresets,
-  listWindowsInMonth,
-  monthBounds,
+  defaultParentKey,
+  effectivePeriodBounds,
+  listDaysInPeriod,
+  listMonthsInParent,
+  listParentPresets,
+  listWindowsInPeriod,
   parseMonthKey,
+  parseParentKey,
+  quarterOfMonth,
   resolveMaxWindow,
   resolveTrendGrain,
-  resolveWithinMonth,
+  resolveWithinPeriod,
   toDateInputValue,
-  toMonthKey,
+  toQuarterKey,
 } from "./aggregate";
 import {
   DEFAULT_METRIC,
@@ -20,13 +24,17 @@ import type {
   MaxWindow,
   MetricId,
   MonthKey,
+  MonthSelection,
+  ParentPeriodKey,
+  PeriodRange,
   TrendGrain,
   WithinMonthScope,
 } from "./types";
 
 export type ViewState = {
   metric: MetricId;
-  monthKey: MonthKey;
+  parentKey: ParentPeriodKey;
+  monthSelection: MonthSelection;
   within: WithinMonthScope;
   selectedDay: string;
   windowStart: string;
@@ -77,50 +85,75 @@ function isDate(value: string | null): value is string {
   return value != null && DATE_RE.test(value);
 }
 
-function defaultMonthKey(fromMs: number, toMs: number): MonthKey {
-  const months = listMonthPresets(fromMs, toMs);
-  const january = months.find((m) => m.id.endsWith("-01"));
-  return (
-    january?.id ??
-    months[0]?.id ??
-    toMonthKey(new Date(fromMs).getFullYear(), new Date(fromMs).getMonth() + 1)
+export function viewBounds(
+  parentKey: ParentPeriodKey,
+  monthSelection: MonthSelection,
+  dataFromMs: number,
+  dataToMs: number,
+): PeriodRange {
+  return effectivePeriodBounds(
+    parentKey,
+    monthSelection,
+    dataFromMs,
+    dataToMs,
   );
 }
 
-function defaultDay(
-  month: MonthKey,
-  dataFromMs: number,
-  dataToMs: number,
-): string {
-  const days = listDaysInMonth(month, dataFromMs, dataToMs);
+function defaultDay(bounds: PeriodRange, dataToMs: number): string {
+  const days = listDaysInPeriod(bounds);
   return days.at(-1)?.id ?? toDateInputValue(dataToMs);
 }
 
 function defaultWindow(
-  month: MonthKey,
+  bounds: PeriodRange,
   dataFromMs: number,
-  dataToMs: number,
   length: 7 | 14,
 ): string {
-  const windows = listWindowsInMonth(month, dataFromMs, dataToMs, length);
+  const windows = listWindowsInPeriod(bounds, length);
   return windows.at(-1)?.id ?? toDateInputValue(dataFromMs);
+}
+
+export function parentFromMonthKey(monthKey: MonthKey): ParentPeriodKey {
+  const parsed = parseMonthKey(monthKey);
+  if (!parsed) {
+    return toQuarterKey(new Date().getFullYear(), 1);
+  }
+  return toQuarterKey(parsed.year, quarterOfMonth(parsed.month));
 }
 
 /** Sensible defaults used when URL params are missing or invalid. */
 export function buildDefaultViewState(meta: DatasetMeta): ViewState {
-  const monthKey = defaultMonthKey(meta.fromMs, meta.toMs);
-  const bounds = monthBounds(monthKey, meta.fromMs, meta.toMs);
+  const parentKey = defaultParentKey(meta.fromMs, meta.toMs);
+  const monthSelection: MonthSelection = "full";
+  const bounds = viewBounds(
+    parentKey,
+    monthSelection,
+    meta.fromMs,
+    meta.toMs,
+  );
   return {
     metric: DEFAULT_METRIC,
-    monthKey,
+    parentKey,
+    monthSelection,
     within: "month",
-    selectedDay: defaultDay(monthKey, meta.fromMs, meta.toMs),
-    windowStart: defaultWindow(monthKey, meta.fromMs, meta.toMs, 7),
+    selectedDay: defaultDay(bounds, meta.toMs),
+    windowStart: defaultWindow(bounds, meta.fromMs, 7),
     customFrom: toDateInputValue(bounds.fromMs),
     customTo: toDateInputValue(bounds.toMs),
     trendGrain: "day",
     maxWindow: "3m",
   };
+}
+
+function monthAvailableInParent(
+  parentKey: ParentPeriodKey,
+  monthKey: MonthKey,
+  fromMs: number,
+  toMs: number,
+): boolean {
+  return listMonthsInParent(parentKey, fromMs, toMs).some(
+    (m) => m.id === monthKey,
+  );
 }
 
 export function parseViewState(
@@ -131,35 +164,54 @@ export function parseViewState(
   const params = new URLSearchParams(
     search.startsWith("?") ? search.slice(1) : search,
   );
-  const months = listMonthPresets(meta.fromMs, meta.toMs);
-  const monthIds = new Set(months.map((m) => m.id));
+  const parents = listParentPresets(meta.fromMs, meta.toMs);
+  const parentIds = new Set(parents.map((p) => p.id));
 
   const metric = parseMetricSlug(params.get("metric")) ?? defaults.metric;
 
   const h = params.get("h");
-  const monthKey =
-    h && monthIds.has(h as MonthKey) && parseMonthKey(h as MonthKey)
-      ? (h as MonthKey)
-      : defaults.monthKey;
+  const hm = params.get("hm");
+
+  let parentKey = defaults.parentKey;
+  let monthSelection: MonthSelection = defaults.monthSelection;
+
+  if (h && parseParentKey(h) && parentIds.has(h as ParentPeriodKey)) {
+    parentKey = h as ParentPeriodKey;
+    monthSelection = "full";
+    if (
+      hm &&
+      parseMonthKey(hm) &&
+      monthAvailableInParent(parentKey, hm as MonthKey, meta.fromMs, meta.toMs)
+    ) {
+      monthSelection = hm as MonthKey;
+    }
+  } else if (h && parseMonthKey(h)) {
+    // Legacy: h=YYYY-MM → containing quarter + that month
+    const monthKey = h as MonthKey;
+    const candidate = parentFromMonthKey(monthKey);
+    if (
+      parentIds.has(candidate) &&
+      monthAvailableInParent(candidate, monthKey, meta.fromMs, meta.toMs)
+    ) {
+      parentKey = candidate;
+      monthSelection = monthKey;
+    }
+  }
 
   const wRaw = params.get("w");
   const within = isWithin(wRaw) ? wRaw : defaults.within;
 
-  const days = listDaysInMonth(monthKey, meta.fromMs, meta.toMs);
+  const bounds = viewBounds(parentKey, monthSelection, meta.fromMs, meta.toMs);
+  const days = listDaysInPeriod(bounds);
   const dayIds = new Set(days.map((d) => d.id));
-  const weekIds = new Set(
-    listWindowsInMonth(monthKey, meta.fromMs, meta.toMs, 7).map((x) => x.id),
-  );
-  const twoWeekIds = new Set(
-    listWindowsInMonth(monthKey, meta.fromMs, meta.toMs, 14).map((x) => x.id),
-  );
-  const bounds = monthBounds(monthKey, meta.fromMs, meta.toMs);
+  const weekIds = new Set(listWindowsInPeriod(bounds, 7).map((x) => x.id));
+  const twoWeekIds = new Set(listWindowsInPeriod(bounds, 14).map((x) => x.id));
   const boundFrom = toDateInputValue(bounds.fromMs);
   const boundTo = toDateInputValue(bounds.toMs);
 
   const d = params.get("d");
-  let selectedDay = defaultDay(monthKey, meta.fromMs, meta.toMs);
-  let windowStart = defaultWindow(monthKey, meta.fromMs, meta.toMs, 7);
+  let selectedDay = defaultDay(bounds, meta.toMs);
+  let windowStart = defaultWindow(bounds, meta.fromMs, 7);
 
   if (within === "1d") {
     selectedDay = d && dayIds.has(d) ? d : selectedDay;
@@ -167,9 +219,7 @@ export function parseViewState(
     windowStart = d && weekIds.has(d) ? d : windowStart;
   } else if (within === "14d") {
     windowStart =
-      d && twoWeekIds.has(d)
-        ? d
-        : defaultWindow(monthKey, meta.fromMs, meta.toMs, 14);
+      d && twoWeekIds.has(d) ? d : defaultWindow(bounds, meta.fromMs, 14);
   }
 
   const fromParam = params.get("from");
@@ -188,18 +238,12 @@ export function parseViewState(
     customTo = swap;
   }
 
-  const range = resolveWithinMonth(
-    monthKey,
-    within,
-    meta.fromMs,
-    meta.toMs,
-    {
-      selectedDay,
-      windowStart,
-      customFrom,
-      customTo,
-    },
-  );
+  const range = resolveWithinPeriod(bounds, within, {
+    selectedDay,
+    windowStart,
+    customFrom,
+    customTo,
+  });
 
   const g = params.get("g");
   const requestedGrain = isGrain(g) ? g : defaults.trendGrain;
@@ -219,7 +263,8 @@ export function parseViewState(
 
   return {
     metric,
-    monthKey,
+    parentKey,
+    monthSelection,
     within,
     selectedDay,
     windowStart,
@@ -230,7 +275,12 @@ export function parseViewState(
   };
 }
 
-/** Build query params, omitting values that match defaults. */
+/**
+ * Encode state into query params.
+ * - Parent: h=2026-Q1 / h=2026-H1 when not default
+ * - Month under default parent: compact legacy h=YYYY-MM
+ * - Month under non-default parent: h=parent&hm=YYYY-MM
+ */
 export function buildSearchParams(
   state: ViewState,
   defaults: ViewState,
@@ -240,9 +290,18 @@ export function buildSearchParams(
   if (state.metric !== defaults.metric) {
     params.set("metric", metricSlug(state.metric));
   }
-  if (state.monthKey !== defaults.monthKey) {
-    params.set("h", state.monthKey);
+
+  if (state.monthSelection === "full") {
+    if (state.parentKey !== defaults.parentKey) {
+      params.set("h", state.parentKey);
+    }
+  } else if (state.parentKey === defaults.parentKey) {
+    params.set("h", state.monthSelection);
+  } else {
+    params.set("h", state.parentKey);
+    params.set("hm", state.monthSelection);
   }
+
   if (state.within !== "month") {
     params.set("w", state.within);
   }

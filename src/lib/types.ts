@@ -97,6 +97,22 @@ export type PeriodRange = {
 /** Selected calendar month as YYYY-MM */
 export type MonthKey = `${number}-${string}`;
 
-/** Filter scope inside the selected month */
+/** Calendar quarter as YYYY-Qn */
+export type QuarterKey = `${number}-Q${1 | 2 | 3 | 4}`;
+
+/** Calendar half-year as YYYY-Hn */
+export type HalfKey = `${number}-H${1 | 2}`;
+
+/** Parent period above months (quarter or half-year) */
+export type ParentPeriodKey = QuarterKey | HalfKey;
+
+/**
+ * Month row selection inside a parent:
+ * - "full" = entire parent period
+ * - MonthKey = one calendar month inside the parent
+ */
+export type MonthSelection = "full" | MonthKey;
+
+/** Filter scope inside the selected effective period */
 export type WithinMonthScope = "month" | "1d" | "7d" | "14d" | "custom";
 

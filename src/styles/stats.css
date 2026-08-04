@@ -24,18 +24,30 @@
   border-bottom-right-radius: 11px;
 }
 
+/* WHO card first: full-width top row on narrow screens */
+.stats--with-days .stat:nth-child(1) {
+  grid-column: 1 / -1;
+  border-top-left-radius: 11px;
+  border-top-right-radius: 11px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.stats--with-days .stat:nth-child(2) {
+  border-top-right-radius: 0;
+}
+
 .stats--with-days .stat:nth-child(3) {
   border-bottom-left-radius: 0;
 }
 
 .stats--with-days .stat:nth-child(4) {
+  border-bottom-left-radius: 11px;
   border-bottom-right-radius: 0;
 }
 
 .stats--with-days .stat:nth-child(5) {
-  border-bottom-left-radius: 11px;
   border-bottom-right-radius: 11px;
-  grid-column: 1 / -1;
 }
 
 @media (min-width: 800px) {
@@ -60,12 +72,18 @@
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
+  .stats--with-days .stat:nth-child(1) {
+    grid-column: auto;
+    border-radius: 11px 0 0 11px;
+  }
+
+  .stats--with-days .stat:nth-child(2),
+  .stats--with-days .stat:nth-child(3),
   .stats--with-days .stat:nth-child(4) {
     border-radius: 0;
   }
 
   .stats--with-days .stat:nth-child(5) {
-    grid-column: auto;
     border-radius: 0 11px 11px 0;
   }
 }
@@ -85,6 +103,35 @@
 
 .stat:hover {
   background: var(--bg-hover);
+}
+
+.stat:has(.tone-good),
+.stat:has(.tone-moderate),
+.stat:has(.tone-poor),
+.stat:has(.tone-bad) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Outset so the tone line replaces the grey 1px grid gap (no double border). */
+.stat:has(.tone-good) {
+  box-shadow: 0 0 0 1px var(--good);
+}
+
+.stat:has(.tone-moderate) {
+  box-shadow: 0 0 0 1px var(--moderate);
+}
+
+.stat:has(.tone-poor) {
+  box-shadow: 0 0 0 1px var(--poor);
+}
+
+.stat:has(.tone-bad) {
+  box-shadow: 0 0 0 1px var(--bad);
+}
+
+.stat--featured .stat-value {
+  font-size: clamp(1.75rem, 3.4vw, 2.25rem);
 }
 
 .stat-label {

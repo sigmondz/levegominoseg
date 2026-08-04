@@ -16,6 +16,7 @@ function Stat({
   tip,
   tipId,
   tipLabel,
+  featured = false,
 }: {
   label: string;
   value: ReactNode;
@@ -25,9 +26,10 @@ function Stat({
   tip?: string;
   tipId?: string;
   tipLabel?: string;
+  featured?: boolean;
 }) {
   return (
-    <div className="stat">
+    <div className={`stat${featured ? " stat--featured" : ""}`}>
       <div className="stat-label">
         {tip && tipId && tipLabel ? (
           <span className="label-with-tip">
@@ -67,6 +69,48 @@ export function Stats({ data }: Props) {
         </p>
       </div>
       <div className={`stats${showDaysAboveWho ? " stats--with-days" : ""}`}>
+        {showDaysAboveWho ? (
+          <Stat
+            featured
+            label="WHO érték felett"
+            value={
+              <>
+                <span
+                  className={
+                    data.daysAboveWho === 0 ? "tone-good" : "tone-bad"
+                  }
+                >
+                  {data.daysAboveWho}
+                </span>
+                <span className="stat-value-total">/{data.daysTotal}</span>
+              </>
+            }
+            hint="napok a WHO irányérték felett"
+            unit="nap"
+            tipId="days-above-who-tip"
+            tipLabel="Mik a WHO feletti napok?"
+            tip={`Hány napnak volt a napi átlaga a WHO ${who} µg/m³ irányérték felett, a kiválasztott időszak összes naptári napjához képest.`}
+          />
+        ) : null}
+        <Stat
+          label="Maximum"
+          value={String(data.max)}
+          unit="µg/m³"
+          hint="legnagyobb 3 perces mérés"
+          tone={pmTone(data.max, data.metric)}
+          tipId="max-tip"
+          tipLabel="Mi a maximum?"
+          tip="A kiválasztott időszak legmagasabb 3 perces mérése. Ha a grafikonon nagyobb max ablakot választasz, a piros görbe ettől eltérhet — ott már simított csúcsot látsz."
+        />
+        <Stat
+          label="≥ 80 µg/m³"
+          value={`${data.above80pct}%`}
+          hint="erősen szennyezett tartomány felett"
+          tone="bad"
+          tipId="above80-tip"
+          tipLabel="Mi a 80 µg/m³ küszöb?"
+          tip="Efelett a levegő erősen szennyezettnek számít. A százalék a mérések aránya, amelyek átlépték ezt."
+        />
         <Stat
           label="Átlag"
           value={data.mean.toFixed(1)}
@@ -95,47 +139,6 @@ export function Stats({ data }: Props) {
           tipLabel="Mi a medián?"
           tip="A középső érték: a mérések fele ez alatt, fele felette van. Kevesebb szélsőség húzza el, mint az átlagot. Alatta a p95 azt jelenti: a mérések 95%-a ez alatt maradt."
         />
-        <Stat
-          label="Maximum"
-          value={String(data.max)}
-          unit="µg/m³"
-          hint="legnagyobb 3 perces mérés"
-          tone={pmTone(data.max, data.metric)}
-          tipId="max-tip"
-          tipLabel="Mi a maximum?"
-          tip="A kiválasztott időszak legmagasabb 3 perces mérése. Ha a grafikonon nagyobb max ablakot választasz, a piros görbe ettől eltérhet — ott már simított csúcsot látsz."
-        />
-        <Stat
-          label="≥ 80 µg/m³"
-          value={`${data.above80pct}%`}
-          hint="erősen szennyezett tartomány felett"
-          tone="bad"
-          tipId="above80-tip"
-          tipLabel="Mi a 80 µg/m³ küszöb?"
-          tip="Efelett a levegő erősen szennyezettnek számít. A százalék a mérések aránya, amelyek átlépték ezt."
-        />
-        {showDaysAboveWho ? (
-          <Stat
-            label="WHO érték felett"
-            value={
-              <>
-                <span
-                  className={
-                    data.daysAboveWho === 0 ? "tone-good" : "tone-bad"
-                  }
-                >
-                  {data.daysAboveWho}
-                </span>
-                <span className="stat-value-total">/{data.daysTotal}</span>
-              </>
-            }
-            hint="napok a WHO irányérték felett"
-            unit="nap"
-            tipId="days-above-who-tip"
-            tipLabel="Mik a WHO feletti napok?"
-            tip={`Hány napnak volt a napi átlaga a WHO ${who} µg/m³ irányérték felett, a kiválasztott időszak összes naptári napjához képest.`}
-          />
-        ) : null}
       </div>
     </section>
   );
