@@ -85,6 +85,7 @@ export type TrendGrain =
   | "8h"
   | "12h"
   | "day"
+  | "2d"
   | "week";
 
 /** Window used to compute the MAX series inside each trend bucket */

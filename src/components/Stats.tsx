@@ -63,7 +63,7 @@ function valueVsWho(
   return {
     value: (
       <>
-        <span className={`tone-${tone}`}>
+        <span className={`stat-value-part tone-${tone}`}>
           {amount.toFixed(1)}
           <small>µg/m³</small>
         </span>
@@ -72,7 +72,7 @@ function valueVsWho(
           <span className={`tone-${tone}`}>{relation} </span>
           <span className="stat-who-threshold">
             {who}
-            <small> µg/m³</small>
+            <small>µg/m³</small>
           </span>
         </span>
       </>

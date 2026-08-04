@@ -92,6 +92,7 @@ const GRAIN_OPTIONS: { id: TrendGrain; label: string }[] = [
   { id: "8h", label: "8 óra" },
   { id: "12h", label: "12 óra" },
   { id: "day", label: "Nap" },
+  { id: "2d", label: "2 nap" },
   { id: "week", label: "Hét" },
 ];
 
@@ -167,6 +168,19 @@ function grainCopy(
       maxDesc: maxIsRaw
         ? `Az adott nap legmagasabb ${intervalMin} perces mérése — a napi csúcsterhelést emeli ki. Ha egy rövid, erős szennyezési hullám volt, itt jelenik meg, még ha az átlagot alig emelte is. A max ablak „${intervalMin} perc” beállításánál ez a nyers csúcs. A grafikonon a piros görbe.`
         : `Az adott napon belüli, ${maxLabel} ablakokra számolt átlagok közül a legmagasabb. A rövid, egyedi kiugrásokat simítja, de a tartósabb csúcsokat megőrzi — ezért kevésbé „zajérzékeny”, mint a nyers max. A max ablakot fent állíthatod. A grafikonon a piros görbe.`,
+    };
+  }
+
+  if (grain === "2d") {
+    return {
+      title: "Kétnapos átlag és csúcs",
+      kicker: "Kétnapos aggregáció",
+      desc: `Minden kétnapos blokk a ${intervalMin} perces mean értékekből számolva. A szaggatott vonalak a referencia-határértékek.`,
+      seriesTitle: "Átlag görbe",
+      seriesDesc: `Az adott két nap összes érvényes ${intervalMin} perces mintájának számtani átlaga. Sűrűbb, mint a heti nézet, de simább, mint a napi — negyedéves és féléves tartományokban jól követhető. A grafikonon a folyamatos (nem szaggatott) görbe.`,
+      maxDesc: maxIsRaw
+        ? `Az adott két nap legmagasabb ${intervalMin} perces mérése — a csúcsterhelést emeli ki. A max ablak „${intervalMin} perc” beállításánál ez a nyers csúcs. A grafikonon a piros görbe.`
+        : `Az adott két napon belüli, ${maxLabel} ablakokra számolt átlagok közül a legmagasabb. A rövid kiugrásokat simítja, a tartósabb csúcsokat megőrzi. A max ablakot fent állíthatod. A grafikonon a piros görbe.`,
     };
   }
 

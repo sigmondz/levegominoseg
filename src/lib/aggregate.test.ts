@@ -227,7 +227,9 @@ describe("aggregate", () => {
     const longExt = availableTrendGrains(TEST_META.fromMs, TEST_META.toMs, {
       extended: true,
     });
+    expect(longExt).toContain("2d");
     expect(longExt).toContain("week");
+    expect(longExt).not.toContain("raw");
   });
 
   test("resolveTrendGrain visszaállít érvénytelen grain-re", () => {
@@ -242,6 +244,11 @@ describe("aggregate", () => {
         extended: true,
       }),
     ).toBe("week");
+    expect(
+      resolveTrendGrain(TEST_META.fromMs, TEST_META.toMs, "2d", {
+        extended: true,
+      }),
+    ).toBe("2d");
   });
 
   test("suggestTrendGrain alapértelmezett", () => {
@@ -264,7 +271,7 @@ describe("aggregate", () => {
         TEST_META.fromMs + 90 * 24 * 60 * 60 * 1000,
         { extended: true },
       ),
-    ).toBe("week");
+    ).toBe("2d");
   });
 
   test("availableMaxWindows és resolveMaxWindow", () => {
@@ -289,6 +296,7 @@ describe("aggregate", () => {
 
     // Teljes Q/H: hosszabb peak-ablak
     expect(suggestMaxWindow("day", 3, { extended: true })).toBe("6h");
+    expect(suggestMaxWindow("2d", 3, { extended: true })).toBe("2h");
     expect(suggestMaxWindow("week", 3, { extended: true })).toBe("day");
     expect(suggestMaxWindow("hour", 3, { extended: true })).toBe("30m");
   });

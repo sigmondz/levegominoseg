@@ -65,6 +65,7 @@ const GRAIN_VALUES: TrendGrain[] = [
   "8h",
   "12h",
   "day",
+  "2d",
   "week",
 ];
 

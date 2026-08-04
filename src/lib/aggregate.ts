@@ -30,6 +30,7 @@ const GRAIN_MS: Partial<Record<TrendGrain, number>> = {
   "4h": 4 * HOUR_MS,
   "8h": 8 * HOUR_MS,
   "12h": 12 * HOUR_MS,
+  "2d": 2 * DAY_MS,
   week: 7 * DAY_MS,
 };
 
@@ -95,24 +96,28 @@ export function suggestMaxWindow(
   const preferred: MaxWindow[] =
     options?.extended === true && grain === "week"
       ? ["day", "12h", "6h", "2h", "hour"]
-      : options?.extended === true && (grain === "day" || grain.endsWith("h"))
-        ? ["6h", "2h", "hour", "30m", "15m"]
-        : grain === "week"
-          ? ["day", "12h", "6h", "2h", "hour"]
-          : grain === "day"
-            ? ["hour", "30m", "15m"]
-            : grain === "12h" ||
-                grain === "8h" ||
-                grain === "4h" ||
-                grain === "2h"
-              ? ["hour", "30m", "15m"]
-              : grain === "hour"
-                ? ["30m", "15m", "6m"]
-                : grain === "30m"
-                  ? ["15m", "6m", "3m"]
-                  : grain === "15m"
-                    ? ["6m", "3m"]
-                    : ["3m"];
+      : options?.extended === true && grain === "2d"
+        ? ["2h", "6h", "hour", "30m", "15m"]
+        : options?.extended === true && (grain === "day" || grain.endsWith("h"))
+          ? ["6h", "2h", "hour", "30m", "15m"]
+          : grain === "week"
+            ? ["day", "12h", "6h", "2h", "hour"]
+            : grain === "2d"
+              ? ["2h", "hour", "30m", "15m"]
+              : grain === "day"
+                ? ["hour", "30m", "15m"]
+                : grain === "12h" ||
+                    grain === "8h" ||
+                    grain === "4h" ||
+                    grain === "2h"
+                  ? ["hour", "30m", "15m"]
+                  : grain === "hour"
+                    ? ["30m", "15m", "6m"]
+                    : grain === "30m"
+                      ? ["15m", "6m", "3m"]
+                      : grain === "15m"
+                        ? ["6m", "3m"]
+                        : ["3m"];
 
   for (const window of preferred) {
     if (available.includes(window)) return window;
@@ -587,9 +592,25 @@ function startOfLocalWeek(ms: number): number {
   return d.getTime();
 }
 
+/** Local midnight of the 2-day pair containing ms (aligned by day-of-year). */
+function startOfLocalTwoDay(ms: number): number {
+  const dayStart = startOfLocalDay(ms);
+  const d = new Date(dayStart);
+  const yearStart = new Date(d.getFullYear(), 0, 1).getTime();
+  const dayOfYear = Math.floor((dayStart - yearStart) / DAY_MS);
+  d.setDate(d.getDate() - (dayOfYear % 2));
+  return d.getTime();
+}
+
 function weekLabel(ms: number): string {
   const start = startOfLocalWeek(ms);
   const end = start + 6 * DAY_MS;
+  return `${dayLabel(start)}–${dayLabel(end)}`;
+}
+
+function twoDayLabel(ms: number): string {
+  const start = startOfLocalTwoDay(ms);
+  const end = start + DAY_MS;
   return `${dayLabel(start)}–${dayLabel(end)}`;
 }
 
@@ -621,9 +642,9 @@ export function availableTrendGrains(
   if (span <= 16 * DAY_MS) {
     return ["30m", "hour", "2h", "4h", "8h", "12h", "day"];
   }
-  // Weekly buckets only for full Q/H periods
+  // 2-day / weekly buckets only for full Q/H periods
   if (options?.extended === true) {
-    return ["hour", "2h", "4h", "8h", "12h", "day", "week"];
+    return ["hour", "2h", "4h", "8h", "12h", "day", "2d", "week"];
   }
   return ["hour", "2h", "4h", "8h", "12h", "day"];
 }
@@ -638,8 +659,9 @@ export function suggestTrendGrain(
   if (span <= 36 * HOUR_MS) return "15m";
   if (span <= 8 * DAY_MS) return "hour";
   if (span <= 16 * DAY_MS) return "2h";
-  if (span <= 60 * DAY_MS || options?.extended !== true) return "day";
-  return "week";
+  // Full Q/H: 2-day is denser than week, still readable on long spans
+  if (options?.extended === true) return "2d";
+  return "day";
 }
 
 /** Keep the current grain if still allowed, otherwise fall back to the default. */
@@ -712,9 +734,11 @@ function buildTrend(
     const bucketMs =
       grain === "week"
         ? startOfLocalWeek(t)
-        : bucketSize
-          ? Math.floor(t / bucketSize) * bucketSize
-          : startOfLocalDay(t);
+        : grain === "2d"
+          ? startOfLocalTwoDay(t)
+          : bucketSize
+            ? Math.floor(t / bucketSize) * bucketSize
+            : startOfLocalDay(t);
     const key = String(bucketMs);
     const bucket = trendMap.get(key);
     if (bucket) bucket.samples.push(point);
@@ -729,11 +753,13 @@ function buildTrend(
         label:
           grain === "week"
             ? weekLabel(ms)
-            : grain === "day"
-              ? dayLabel(ms)
-              : grain === "hour" || grain.endsWith("h")
-                ? hourLabel(ms)
-                : minuteLabel(ms),
+            : grain === "2d"
+              ? twoDayLabel(ms)
+              : grain === "day"
+                ? dayLabel(ms)
+                : grain === "hour" || grain.endsWith("h")
+                  ? hourLabel(ms)
+                  : minuteLabel(ms),
         mean: Number(
           (values.reduce((s, x) => s + x, 0) / values.length).toFixed(2),
         ),
