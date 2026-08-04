@@ -44,8 +44,9 @@ describe("aqi", () => {
   test("above80Tone a százalék alapján", () => {
     expect(above80Tone(0)).toBe("good");
     expect(above80Tone(1)).toBe("moderate");
-    expect(above80Tone(5)).toBe("poor");
-    expect(above80Tone(10)).toBe("bad");
+    expect(above80Tone(4)).toBe("poor");
+    expect(above80Tone(5)).toBe("bad");
+    expect(above80Tone(8.1)).toBe("bad");
   });
 
   test("daysAboveWhoTone a naparány alapján", () => {

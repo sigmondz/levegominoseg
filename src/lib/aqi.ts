@@ -48,7 +48,7 @@ export function pmLabel(value: number, metric: string = "PM2.5"): string {
 export function above80Tone(pct: number): PmTone {
   if (pct <= 0) return "good";
   if (pct < 2) return "moderate";
-  if (pct < 10) return "poor";
+  if (pct < 5) return "poor";
   return "bad";
 }
 
