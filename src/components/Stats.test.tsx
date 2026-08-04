@@ -23,5 +23,27 @@ describe("Stats", () => {
     expect(getByText("Maximum")).toBeInTheDocument();
     expect(getByText("≥ 80 µg/m³")).toBeInTheDocument();
     expect(getByText(`${summary.mean.toFixed(1)}`)).toBeInTheDocument();
+    expect(getByText("WHO felett")).toBeInTheDocument();
+    expect(
+      getByText((_, el) => {
+        return (
+          el?.classList.contains("stat-value") === true &&
+          el.textContent === `${summary.daysAboveWho}/${summary.daysTotal}`
+        );
+      }),
+    ).toBeInTheDocument();
+  });
+
+  test("egynapos tartománynál nincs WHO feletti napok kártya", () => {
+    const oneDay = buildSummary(
+      TEST_POINTS,
+      TEST_META,
+      TEST_META.fromMs,
+      TEST_META.fromMs + 12 * 60 * 60 * 1000,
+      "hour",
+      "3m",
+    );
+    const { queryByText } = render(<Stats data={oneDay} />);
+    expect(queryByText("WHO felett")).toBeNull();
   });
 });

@@ -11,6 +11,7 @@ import type {
   TrendPoint,
   WithinMonthScope,
 } from "./types";
+import { WHO_24H } from "./aqi";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
@@ -328,6 +329,13 @@ function dayKey(ms: number): string {
   return toDateInputValue(ms);
 }
 
+function calendarDayCount(fromMs: number, toMs: number): number {
+  if (toMs < fromMs) return 0;
+  const start = new Date(`${dayKey(fromMs)}T12:00:00`).getTime();
+  const end = new Date(`${dayKey(toMs)}T12:00:00`).getTime();
+  return Math.floor((end - start) / DAY_MS) + 1;
+}
+
 function dayLabel(ms: number): string {
   const d = new Date(ms);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -572,6 +580,8 @@ export function buildSummary(
     above80pct: valid
       ? Number(((100 * vals.filter((v) => v >= 80).length) / valid).toFixed(1))
       : 0,
+    daysAboveWho: daily.filter((d) => d.mean >= WHO_24H).length,
+    daysTotal: calendarDayCount(fromMs, toMs),
     daily,
     hourlyMean,
     trend,

@@ -150,6 +150,18 @@ def build_summary(points: list[list], meta: dict, from_ms: int, to_ms: int) -> d
         "above15pct": round(100 * sum(1 for v in vals if v >= 15) / valid, 1) if valid else 0,
         "above25pct": round(100 * sum(1 for v in vals if v >= 25) / valid, 1) if valid else 0,
         "above80pct": round(100 * sum(1 for v in vals if v >= 80) / valid, 1) if valid else 0,
+        "daysAboveWho": sum(1 for d in daily if d["mean"] >= 15),
+        "daysTotal": (
+            int(
+                (
+                    datetime.strptime(to_date_key(to_ms), "%Y-%m-%d")
+                    - datetime.strptime(to_date_key(from_ms), "%Y-%m-%d")
+                ).days
+            )
+            + 1
+            if to_ms >= from_ms
+            else 0
+        ),
         "daily": daily,
         "hourlyMean": hourly_mean,
         "trend": trend,

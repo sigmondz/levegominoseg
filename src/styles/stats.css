@@ -24,6 +24,20 @@
   border-bottom-right-radius: 11px;
 }
 
+.stats--with-days .stat:nth-child(3) {
+  border-bottom-left-radius: 0;
+}
+
+.stats--with-days .stat:nth-child(4) {
+  border-bottom-right-radius: 0;
+}
+
+.stats--with-days .stat:nth-child(5) {
+  border-bottom-left-radius: 11px;
+  border-bottom-right-radius: 11px;
+  grid-column: 1 / -1;
+}
+
 @media (min-width: 800px) {
   .stats {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -39,6 +53,19 @@
   }
 
   .stat:nth-child(4) {
+    border-radius: 0 11px 11px 0;
+  }
+
+  .stats--with-days {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .stats--with-days .stat:nth-child(4) {
+    border-radius: 0;
+  }
+
+  .stats--with-days .stat:nth-child(5) {
+    grid-column: auto;
     border-radius: 0 11px 11px 0;
   }
 }

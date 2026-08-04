@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Summary } from "../lib/types";
 import { pmTone } from "../lib/aqi";
 import { InfoTip } from "./InfoTip";
@@ -17,7 +18,7 @@ function Stat({
   tipLabel,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   unit?: string;
   hint: string;
   tone?: string;
@@ -49,6 +50,8 @@ function Stat({
 }
 
 export function Stats({ data }: Props) {
+  const showDaysAboveWho = data.daysTotal > 1;
+
   return (
     <section className="section" id="osszefoglalo" aria-labelledby="stats-title">
       <div className="section-head">
@@ -62,7 +65,7 @@ export function Stats({ data }: Props) {
           {data.from.slice(0, 16)} → {data.to.slice(0, 16)}.
         </p>
       </div>
-      <div className="stats">
+      <div className={`stats${showDaysAboveWho ? " stats--with-days" : ""}`}>
         <Stat
           label="Átlag"
           value={data.mean.toFixed(1)}
@@ -102,6 +105,27 @@ export function Stats({ data }: Props) {
           tipLabel="Mi a 80 µg/m³ küszöb?"
           tip="Efelett a levegő erősen szennyezettnek számít. A százalék a mérések aránya, amelyek átlépték ezt."
         />
+        {showDaysAboveWho ? (
+          <Stat
+            label="WHO felett"
+            value={
+              <>
+                <span
+                  className={
+                    data.daysAboveWho === 0 ? "tone-good" : "tone-bad"
+                  }
+                >
+                  {data.daysAboveWho}
+                </span>
+                <span className="tone-good">/{data.daysTotal}</span>
+              </>
+            }
+            hint="napok a WHO irányérték felett"
+            tipId="days-above-who-tip"
+            tipLabel="Mik a WHO feletti napok?"
+            tip="Hány napnak volt a napi átlaga a WHO 15 µg/m³ irányérték felett, a kiválasztott időszak összes naptári napjához képest."
+          />
+        ) : null}
       </div>
     </section>
   );

@@ -140,6 +140,21 @@ describe("aggregate", () => {
     expect(summary.hourlyMean.length).toBeGreaterThan(0);
     expect(summary.trend.length).toBeGreaterThan(0);
     expect(summary.trendGrain).toBe("day");
+    expect(summary.daysTotal).toBe(3);
+    expect(summary.daysAboveWho).toBeGreaterThanOrEqual(0);
+    expect(summary.daysAboveWho).toBeLessThanOrEqual(summary.daysTotal);
+  });
+
+  test("buildSummary egy napos tartomány daysTotal", () => {
+    const summary = buildSummary(
+      TEST_POINTS,
+      TEST_META,
+      TEST_META.fromMs,
+      TEST_META.fromMs + 12 * 60 * 60 * 1000,
+      "hour",
+      "3m",
+    );
+    expect(summary.daysTotal).toBe(1);
   });
 
   test("buildSummary üres tartomány", () => {

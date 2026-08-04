@@ -58,6 +58,10 @@ export type Summary = {
   above15pct: number;
   above25pct: number;
   above80pct: number;
+  /** Days with daily mean ≥ WHO 24h guideline. */
+  daysAboveWho: number;
+  /** Calendar days in the selected range (inclusive). */
+  daysTotal: number;
   daily: DailyPoint[];
   hourlyMean: HourlyPoint[];
   trend: TrendPoint[];
