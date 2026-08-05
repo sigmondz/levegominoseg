@@ -540,7 +540,12 @@ export default function App() {
                 });
               }}
             />
-            <HourlyChart hourly={data.hourlyMean} />
+            <HourlyChart
+              hourly={data.hourlyMean}
+              mean={data.mean}
+              metric={data.metric}
+              intervalMin={series.meta.intervalMin}
+            />
           </Suspense>
         </>
       ) : null}

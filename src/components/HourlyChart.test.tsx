@@ -13,17 +13,46 @@ const summary = buildSummary(
   "3m",
 );
 
+const baseProps = {
+  hourly: summary.hourlyMean,
+  mean: summary.mean,
+  metric: "PM2.5",
+  intervalMin: 3,
+};
+
 describe("HourlyChart", () => {
-  test("grafikon megjelenik adattal", () => {
-    const { getByText } = render(<HourlyChart hourly={summary.hourlyMean} />);
+  test("grafikon, görbe- és határérték-jelmagyarázat megjelenik", () => {
+    const { getByText, getByRole } = render(<HourlyChart {...baseProps} />);
 
     expect(getByText("Óránkénti profil")).toBeInTheDocument();
     expect(document.querySelector(".recharts-responsive-container")).toBeTruthy();
-    expect(document.querySelector(".recharts-area")).toBeTruthy();
+    expect(document.querySelector(".recharts-line")).toBeTruthy();
+    expect(getByText("Óránkénti átlag")).toBeInTheDocument();
+    expect(getByText("WHO feletti rész")).toBeInTheDocument();
+    expect(getByText("WHO 24 órás irányérték")).toBeInTheDocument();
+    expect(getByText("15 µg/m³")).toBeInTheDocument();
+    expect(getByText("Kiválasztott időszak átlaga")).toBeInTheDocument();
+    expect(getByText("Magas szennyezettségi küszöb")).toBeInTheDocument();
+    expect(getByText("80 µg/m³")).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Mi az óránkénti átlag görbe?" }),
+    ).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Mit jelöl a vörös satírozás?" }),
+    ).toBeInTheDocument();
+  });
+
+  test("PM1-nél nincs WHO irányérték", () => {
+    const { queryByText } = render(
+      <HourlyChart {...baseProps} metric="PM1" />,
+    );
+    expect(queryByText("WHO 24 órás irányérték")).toBeNull();
+    expect(queryByText("WHO feletti rész")).toBeNull();
+    expect(queryByText("Magas szennyezettségi küszöb")).toBeInTheDocument();
   });
 
   test("üres adat esetén üzenet", () => {
-    const { getByText } = render(<HourlyChart hourly={[]} />);
+    const { getByText } = render(<HourlyChart {...baseProps} hourly={[]} />);
 
     expect(
       getByText("Nincs adat a kiválasztott időszakban."),
