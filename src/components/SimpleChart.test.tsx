@@ -23,6 +23,12 @@ describe("SimpleChart", () => {
     expect(
       getByRole("heading", { name: "Az átlag alakulása" }),
     ).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Miről szól ez a grafikon?" }),
+    ).toBeInTheDocument();
+    expect(
+      getByText("Naponta egy pont mutatja a mért értékek átlagát."),
+    ).toBeInTheDocument();
     expect(getByText("Napi átlag")).toBeInTheDocument();
     expect(
       getByText(/A zöld satírozás a WHO 15 µg\/m³ vonala és az átlaggörbe/),

@@ -20,6 +20,7 @@ import {
 import { toneChartColor } from "../lib/theme";
 import type { DailyPoint } from "../lib/types";
 import { ChartYAxisTick } from "./ChartYAxisTick";
+import { InfoTip } from "./InfoTip";
 import { WhoGuidelineLabel } from "./WhoGuidelineLabel";
 
 type Props = {
@@ -75,15 +76,18 @@ export function SimpleChart({ daily, mean, metric, unit }: Props) {
     >
       <div className="simple-chart-card">
         <div className="simple-chart-head">
-          <div>
-            <p className="simple-overview-eyebrow">Egyetlen könnyen olvasható görbe</p>
+          <p className="simple-overview-eyebrow">Egyetlen könnyen olvasható görbe</p>
+          <div className="label-with-tip">
             <h2 className="section-title" id="simple-chart-title">
               Az átlag alakulása
             </h2>
+            <InfoTip
+              label="Miről szól ez a grafikon?"
+              tipId="simple-chart-tip"
+            >
+              Naponta egy pont mutatja a mért értékek átlagát.
+            </InfoTip>
           </div>
-          <p className="simple-chart-desc">
-            Naponta egy pont mutatja a mért értékek átlagát.
-          </p>
         </div>
 
         {points.length === 0 ? (

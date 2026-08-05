@@ -35,7 +35,7 @@
   left: 50%;
   bottom: calc(100% + 0.45rem);
   top: auto;
-  z-index: 20;
+  z-index: 40;
   width: min(20rem, calc(100vw - 1.5rem));
   max-width: calc(100vw - 1.5rem);
   padding: 0.75rem 0.85rem;
