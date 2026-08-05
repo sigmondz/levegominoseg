@@ -58,7 +58,10 @@ export function HourlyChart({ hourly }: Props) {
           <p className="chart-empty">Nincs adat a kiválasztott időszakban.</p>
         ) : (
           <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+            <AreaChart
+              data={data}
+              margin={{ top: 8, right: 12, left: 0, bottom: 4 }}
+            >
               <defs>
                 <linearGradient id="hourlyFill" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={colors.good} stopOpacity={0.35} />
@@ -71,7 +74,9 @@ export function HourlyChart({ hourly }: Props) {
                 tick={tickStyle}
                 axisLine={{ stroke: colors.line }}
                 tickLine={false}
-                interval={2}
+                interval="equidistantPreserveStart"
+                minTickGap={40}
+                tickMargin={6}
               />
               <YAxis
                 tick={tickStyle}

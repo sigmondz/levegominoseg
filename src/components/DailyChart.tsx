@@ -277,13 +277,6 @@ export function DailyChart({
   const showMax = grain !== "raw";
   const animate = trend.length <= 400;
 
-  const tickInterval =
-    trend.length <= 12
-      ? 0
-      : trend.length <= 31
-        ? 2
-        : Math.ceil(trend.length / 12);
-
   const tooltipStyle = {
     background: colors.elevated,
     border: `1px solid ${colors.line}`,
@@ -404,7 +397,7 @@ export function DailyChart({
           <ResponsiveContainer width="100%" height={400}>
             <LineChart
               data={trend}
-              margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
+              margin={{ top: 8, right: 12, left: 0, bottom: 4 }}
             >
               <CartesianGrid stroke={colors.grid} vertical={false} />
               <XAxis
@@ -412,7 +405,9 @@ export function DailyChart({
                 tick={tickStyle}
                 axisLine={{ stroke: colors.line }}
                 tickLine={false}
-                interval={tickInterval}
+                interval="equidistantPreserveStart"
+                minTickGap={36}
+                tickMargin={6}
               />
               <YAxis
                 tick={tickStyle}
