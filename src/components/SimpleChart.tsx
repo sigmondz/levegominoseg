@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
 import { pmTone, who24h } from "../lib/aqi";
-import { buildYAxisTicks, chartYDomainMax } from "../lib/chartAxis";
+import { buildYAxisTicks, chartYDomainMax, whoReferenceLabel } from "../lib/chartAxis";
 import {
   belowThresholdFillValue,
   thresholdFillValue,
@@ -176,6 +176,7 @@ export function SimpleChart({ daily, mean, metric, unit }: Props) {
                     stroke={colors.good}
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
+                    label={whoReferenceLabel(colors.good)}
                   />
                 ) : null}
                 {periodMean != null ? (

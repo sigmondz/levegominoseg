@@ -13,7 +13,7 @@ import {
 import { useChartColors } from "../hooks/useChartColors";
 import type { MaxWindow, SeriesEntry, TrendGrain, TrendPoint } from "../lib/types";
 import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
-import { buildYAxisTicks, chartYDomainMax } from "../lib/chartAxis";
+import { buildYAxisTicks, chartYDomainMax, whoReferenceLabel } from "../lib/chartAxis";
 import { downloadFilteredCsv } from "../lib/exportCsv";
 import { thresholdFillValue, belowThresholdFillValue } from "../lib/simpleChart";
 import { toneChartColor } from "../lib/theme";
@@ -434,7 +434,7 @@ export function DailyChart({
           <ResponsiveContainer width="100%" height={400}>
             <ComposedChart
               data={chartPoints}
-              margin={{ top: 8, right: 12, left: 0, bottom: 4 }}
+              margin={{ top: 18, right: 12, left: 0, bottom: 4 }}
             >
               <CartesianGrid stroke={colors.grid} vertical={false} />
               <XAxis
@@ -513,6 +513,7 @@ export function DailyChart({
                   stroke={colors.good}
                   strokeDasharray="4 4"
                   strokeWidth={1.5}
+                  label={whoReferenceLabel(colors.good)}
                 />
               ) : null}
               <ReferenceLine

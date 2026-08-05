@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
 import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
-import { buildYAxisTicks, chartYDomainMax } from "../lib/chartAxis";
+import { buildYAxisTicks, chartYDomainMax, whoReferenceLabel } from "../lib/chartAxis";
 import { belowThresholdFillValue, thresholdFillValue } from "../lib/simpleChart";
 import { toneChartColor } from "../lib/theme";
 import type { HourlyPoint } from "../lib/types";
@@ -91,7 +91,7 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
           <ResponsiveContainer width="100%" height={280}>
             <ComposedChart
               data={chartPoints}
-              margin={{ top: 8, right: 12, left: 0, bottom: 4 }}
+              margin={{ top: 18, right: 12, left: 0, bottom: 4 }}
             >
               <CartesianGrid stroke={colors.grid} vertical={false} />
               <XAxis
@@ -168,6 +168,7 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
                   stroke={colors.good}
                   strokeDasharray="4 4"
                   strokeWidth={1.5}
+                  label={whoReferenceLabel(colors.good)}
                 />
               ) : null}
               <ReferenceLine
