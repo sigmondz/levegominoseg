@@ -799,14 +799,15 @@ export function buildSummary(
 
   const span = Math.max(0, toMs - fromMs);
 
-  const dailyMap = new Map<string, number[]>();
+  const dailyMap = new Map<string, SeriesEntry[]>();
   const hourlyMap = new Map<number, number[]>();
 
-  for (const [t, v] of filtered) {
+  for (const point of filtered) {
+    const [t, v] = point;
     const dk = dayKey(t);
-    const dayVals = dailyMap.get(dk);
-    if (dayVals) dayVals.push(v);
-    else dailyMap.set(dk, [v]);
+    const daySamples = dailyMap.get(dk);
+    if (daySamples) daySamples.push(point);
+    else dailyMap.set(dk, [point]);
 
     const hour = new Date(t).getHours();
     const hourVals = hourlyMap.get(hour);
@@ -814,16 +815,26 @@ export function buildSummary(
     else hourlyMap.set(hour, [v]);
   }
 
+  const resolvedMax = resolveMaxWindow(
+    trendGrain,
+    meta.intervalMin,
+    maxWindow,
+    { extended: options?.extendedMaxWindows === true },
+  );
+  const windowMs = maxWindowMs(resolvedMax, meta.intervalMin);
+  const rawMs = Math.max(1, meta.intervalMin) * MINUTE_MS;
+
   const daily: DailyPoint[] = [...dailyMap.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, xs]) => {
+    .map(([date, samples]) => {
+      const xs = samples.map(([, v]) => v);
       const xsSorted = [...xs].sort((a, b) => a - b);
       return {
         date,
         label: dayLabel(new Date(`${date}T12:00:00`).getTime()),
-        n: xs.length,
+        n: samples.length,
         mean: Number((xs.reduce((s, x) => s + x, 0) / xs.length).toFixed(2)),
-        max: Number(Math.max(...xs).toFixed(2)),
+        max: Number(maxOfWindowedMeans(samples, windowMs, rawMs).toFixed(2)),
         min: Number(Math.min(...xs).toFixed(2)),
         p50: Number(xsSorted[Math.floor(xsSorted.length / 2)]!.toFixed(2)),
       };
@@ -840,12 +851,6 @@ export function buildSummary(
     };
   }).filter((h) => (hourlyMap.get(h.hour)?.length ?? 0) > 0);
 
-  const resolvedMax = resolveMaxWindow(
-    trendGrain,
-    meta.intervalMin,
-    maxWindow,
-    { extended: options?.extendedMaxWindows === true },
-  );
   const trend = buildTrend(
     filtered,
     trendGrain,

@@ -1,8 +1,8 @@
 .chart-export-actions {
   position: absolute;
-  top: 0.45rem;
-  right: 0.45rem;
-  z-index: 3;
+  top: clamp(0.75rem, 2.5vw, 1.1rem);
+  right: clamp(0.75rem, 2.5vw, 1.1rem);
+  z-index: 4;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

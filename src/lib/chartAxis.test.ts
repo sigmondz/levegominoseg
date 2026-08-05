@@ -16,6 +16,14 @@ describe("chartAxis", () => {
     expect(ticks.at(-1)).toBe(60);
   });
 
+  test("magas tartománynál sűrűbb tengelyt ad", () => {
+    const ticks = buildYAxisTicks(200, [15, 36.5]);
+    expect(ticks).toContain(15);
+    expect(ticks).toContain(36.5);
+    expect(ticks.length).toBeGreaterThanOrEqual(9);
+    expect(ticks.at(-1)).toBe(200);
+  });
+
   test("közeli WHO és átlag is megmarad a tengelyen", () => {
     const ticks = buildYAxisTicks(250, [45, 38.1]);
     expect(ticks).toContain(45);

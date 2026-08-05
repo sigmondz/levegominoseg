@@ -349,6 +349,17 @@ export default function App() {
     });
   }, [series, trendGrain, extendedPeriod]);
 
+  const effectiveMaxWindow = useMemo(() => {
+    if (!series) return maxWindow;
+    // Simple view: always scale the max window to the current period length.
+    if (viewMode === "simple") {
+      return suggestMaxWindow(trendGrain, series.meta.intervalMin, {
+        extended: extendedPeriod,
+      });
+    }
+    return maxWindow;
+  }, [series, viewMode, trendGrain, maxWindow, extendedPeriod]);
+
   const data = useMemo(() => {
     if (!series || !range) return null;
     return buildSummary(
@@ -357,10 +368,10 @@ export default function App() {
       range.fromMs,
       range.toMs,
       trendGrain,
-      maxWindow,
+      effectiveMaxWindow,
       { extendedMaxWindows: extendedPeriod },
     );
-  }, [series, range, trendGrain, maxWindow, extendedPeriod]);
+  }, [series, range, trendGrain, effectiveMaxWindow, extendedPeriod]);
 
   const filteredPoints = useMemo(() => {
     if (!series || !range) return [];
@@ -505,6 +516,9 @@ export default function App() {
             mean={data.mean}
             metric={data.metric}
             unit={data.unit}
+            exportPoints={filteredPoints}
+            exportFromMs={data.fromMs}
+            exportToMs={data.toMs}
           />
         </>
       ) : null}

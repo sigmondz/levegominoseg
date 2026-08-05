@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Area,
   CartesianGrid,
@@ -18,7 +19,8 @@ import {
   withWhoThresholdShades,
 } from "../lib/simpleChart";
 import { toneChartColor } from "../lib/theme";
-import type { DailyPoint } from "../lib/types";
+import type { DailyPoint, SeriesEntry } from "../lib/types";
+import { ChartExportActions } from "./ChartExportActions";
 import { ChartYAxisTick } from "./ChartYAxisTick";
 import { InfoTip } from "./InfoTip";
 import { WhoGuidelineLabel } from "./WhoGuidelineLabel";
@@ -28,10 +30,22 @@ type Props = {
   mean: number;
   metric: string;
   unit: string;
+  exportPoints: SeriesEntry[];
+  exportFromMs: number;
+  exportToMs: number;
 };
 
-export function SimpleChart({ daily, mean, metric, unit }: Props) {
+export function SimpleChart({
+  daily,
+  mean,
+  metric,
+  unit,
+  exportPoints,
+  exportFromMs,
+  exportToMs,
+}: Props) {
   const colors = useChartColors();
+  const [maxVisible, setMaxVisible] = useState(false);
   const who = who24h(metric);
   const points = daily.filter((point) => point.n > 0);
   const chartPoints = withWhoThresholdShades(points, who);
@@ -44,6 +58,7 @@ export function SimpleChart({ daily, mean, metric, unit }: Props) {
     who ?? 0,
     periodMean ?? 0,
     ...points.map((point) => point.mean),
+    ...(maxVisible ? points.map((point) => point.max) : []),
   );
   const yTicks = buildYAxisTicks(domainMax, [who, periodMean]);
   const hasThresholdExceedance =
@@ -75,6 +90,17 @@ export function SimpleChart({ daily, mean, metric, unit }: Props) {
       aria-labelledby="simple-chart-title"
     >
       <div className="simple-chart-card">
+        <ChartExportActions
+          exportPoints={exportPoints}
+          exportFromMs={exportFromMs}
+          exportToMs={exportToMs}
+          mean={mean}
+          canShowMax
+          maxVisible={maxVisible}
+          onMaxVisibleChange={setMaxVisible}
+          ariaControls="egyszeru-grafikon"
+          csvTipId="simple-csv-export-tip"
+        />
         <div className="simple-chart-head">
           <p className="simple-overview-eyebrow">Egyetlen könnyen olvasható görbe</p>
           <div className="label-with-tip">
@@ -90,17 +116,22 @@ export function SimpleChart({ daily, mean, metric, unit }: Props) {
           </div>
         </div>
 
-        {points.length === 0 ? (
-          <p className="chart-empty">Nincs adat a kiválasztott időszakban.</p>
-        ) : (
-          <div className="simple-chart-plot">
+        <div className="simple-chart-plot" id="egyszeru-grafikon">
+          {points.length === 0 ? (
+            <p className="chart-empty">Nincs adat a kiválasztott időszakban.</p>
+          ) : (
             <ResponsiveContainer width="100%" height={320}>
               <ComposedChart
-                key={`${metric}-${points.length}-${periodMean ?? "x"}-${points[0]?.label ?? ""}-${points.at(-1)?.label ?? ""}`}
+                key={`${metric}-${points.length}-${periodMean ?? "x"}-${maxVisible ? "max" : "mean"}-${points[0]?.label ?? ""}-${points.at(-1)?.label ?? ""}`}
                 data={chartPoints}
                 margin={{ top: 18, right: 20, left: 0, bottom: 4 }}
               >
-                <CartesianGrid stroke={colors.grid} vertical={false} />
+                <CartesianGrid
+                  stroke={colors.grid}
+                  vertical={false}
+                  syncWithTicks
+                  horizontalValues={yTicks}
+                />
                 <XAxis
                   dataKey="i"
                   type="number"
@@ -148,9 +179,9 @@ export function SimpleChart({ daily, mean, metric, unit }: Props) {
                 />
                 <Tooltip
                   contentStyle={tooltipStyle}
-                  formatter={(value) => [
+                  formatter={(value, name) => [
                     `${Number(value).toFixed(1)} ${unit}`,
-                    "Napi átlag",
+                    name,
                   ]}
                   labelFormatter={(_label, payload) => {
                     const row = payload?.[0]?.payload as { label?: string } | undefined;
@@ -218,10 +249,25 @@ export function SimpleChart({ daily, mean, metric, unit }: Props) {
                   animationDuration={CHART_ANIMATION_DURATION_MS}
                   animationEasing="ease-in-out"
                 />
+                {maxVisible ? (
+                  <Line
+                    type="monotone"
+                    dataKey="max"
+                    name="Max"
+                    stroke={colors.bad}
+                    strokeWidth={1.5}
+                    strokeOpacity={0.85}
+                    dot={false}
+                    activeDot={{ r: 3 }}
+                    isAnimationActive={animate}
+                    animationDuration={CHART_ANIMATION_DURATION_MS}
+                    animationEasing="ease-in-out"
+                  />
+                ) : null}
               </ComposedChart>
             </ResponsiveContainer>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="simple-chart-key">
           <span className="simple-chart-key-item">
@@ -231,6 +277,16 @@ export function SimpleChart({ daily, mean, metric, unit }: Props) {
               aria-hidden="true"
             />
             Napi átlag
+          </span>
+          <span
+            className={`simple-chart-key-item${maxVisible ? "" : " is-muted"}`}
+          >
+            <span
+              className="simple-chart-key-line"
+              style={{ background: colors.bad }}
+              aria-hidden="true"
+            />
+            Max görbe
           </span>
           {who != null ? (
             <>

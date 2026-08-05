@@ -236,6 +236,7 @@
 }
 
 .simple-chart-card {
+  position: relative;
   overflow: visible;
   padding: clamp(1rem, 3vw, 1.5rem);
   border: 1px solid var(--line);
@@ -249,6 +250,7 @@
 .simple-chart-head {
   position: relative;
   z-index: 2;
+  padding-right: min(12.5rem, 42vw);
 }
 
 .simple-chart-head:has(.info-tip:hover),
@@ -267,6 +269,10 @@
 .simple-chart-plot {
   min-width: 0;
   margin-top: 1rem;
+}
+
+.simple-chart-key-item.is-muted {
+  opacity: 0.45;
 }
 
 .simple-chart-key {

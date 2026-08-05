@@ -94,7 +94,12 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
               data={chartPoints}
               margin={{ top: 18, right: 12, left: 0, bottom: 4 }}
             >
-              <CartesianGrid stroke={colors.grid} vertical={false} />
+              <CartesianGrid
+                stroke={colors.grid}
+                vertical={false}
+                syncWithTicks
+                horizontalValues={yTicks}
+              />
               <XAxis
                 dataKey="i"
                 type="number"

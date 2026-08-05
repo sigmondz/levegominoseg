@@ -320,6 +320,28 @@ describe("aggregate", () => {
     expect(resolveMaxWindow("day", 3, "day", { extended: true })).toBe("hour");
   });
 
+  test("buildSummary napi max a max-ablakkal simít", () => {
+    const fromMs = TEST_META.fromMs;
+    const toMs = TEST_META.fromMs + 2 * 24 * 60 * 60 * 1000;
+    const raw = buildSummary(TEST_POINTS, TEST_META, fromMs, toMs, "day", "3m");
+    const hourly = buildSummary(
+      TEST_POINTS,
+      TEST_META,
+      fromMs,
+      toMs,
+      "day",
+      "hour",
+    );
+
+    expect(raw.daily.length).toBe(hourly.daily.length);
+    for (let i = 0; i < raw.daily.length; i += 1) {
+      expect(hourly.daily[i]!.max).toBeLessThanOrEqual(raw.daily[i]!.max);
+    }
+    expect(
+      hourly.daily.some((day, i) => day.max < raw.daily[i]!.max),
+    ).toBe(true);
+  });
+
   test("buildSummary statisztikák és trend", () => {
     const summary = buildSummary(
       TEST_POINTS,

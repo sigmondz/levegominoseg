@@ -39,7 +39,7 @@ export function nearlyEqual(a: number, b: number, epsilon = 0.05): boolean {
 export function buildYAxisTicks(
   domainMax: number,
   markers: Array<number | null | undefined>,
-  preferredCount = 7,
+  preferredCount = 10,
 ): number[] {
   const max = Math.max(domainMax, 1);
   const step = niceStep(max / Math.max(preferredCount - 1, 1));
@@ -56,7 +56,7 @@ export function buildYAxisTicks(
   );
 
   const markerSet = new Set(extras);
-  const minGap = step * 0.35;
+  const minGap = step * 0.3;
 
   for (const marker of extras) {
     for (const tick of [...ticks]) {

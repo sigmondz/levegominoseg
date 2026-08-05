@@ -14,17 +14,15 @@ import { useChartColors } from "../hooks/useChartColors";
 import type { MaxWindow, SeriesEntry, TrendGrain, TrendPoint } from "../lib/types";
 import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
 import { buildYAxisTicks, chartYDomainMax } from "../lib/chartAxis";
-import { downloadFilteredCsv } from "../lib/exportCsv";
 import {
   CHART_ANIMATION_DURATION_MS,
   chartSeriesAnimated,
   withWhoThresholdShades,
 } from "../lib/simpleChart";
 import { toneChartColor } from "../lib/theme";
+import { ChartExportActions } from "./ChartExportActions";
 import { ChartYAxisTick } from "./ChartYAxisTick";
-import { IconActionButton } from "./IconActionButton";
 import { InfoTip } from "./InfoTip";
-import { ShareView } from "./ShareView";
 import { WhoGuidelineLabel } from "./WhoGuidelineLabel";
 
 type Props = {
@@ -42,72 +40,6 @@ type Props = {
   onGrainChange: (grain: TrendGrain) => void;
   onMaxWindowChange: (window: MaxWindow) => void;
 };
-
-function DownloadIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path
-        d="M8 2.5v7.5M8 10 5.2 7.2M8 10l2.8-2.8"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M3 12.5h10"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function ChartExportActions({
-  exportPoints,
-  exportFromMs,
-  exportToMs,
-  mean,
-  canShowMax,
-  maxVisible,
-  onMaxVisibleChange,
-}: {
-  exportPoints: SeriesEntry[];
-  exportFromMs: number;
-  exportToMs: number;
-  mean: number;
-  canShowMax: boolean;
-  maxVisible: boolean;
-  onMaxVisibleChange: (visible: boolean) => void;
-}) {
-  return (
-    <div className="chart-export-actions">
-      {canShowMax ? (
-        <button
-          type="button"
-          className={`period-chip series-visibility-chip${maxVisible ? " is-active" : ""}`}
-          aria-pressed={maxVisible}
-          aria-controls="napi"
-          onClick={() => onMaxVisibleChange(!maxVisible)}
-        >
-          Max görbe
-        </button>
-      ) : null}
-      <IconActionButton
-        label="CSV letöltés"
-        tip="CSV letöltés. A kiválasztott időszak nyers, 3 perces mérési pontjait tölti le."
-        tipId="csv-export-tip"
-        disabled={exportPoints.length === 0}
-        onClick={() =>
-          downloadFilteredCsv(exportPoints, exportFromMs, exportToMs)
-        }
-      >
-        <DownloadIcon />
-      </IconActionButton>
-      <ShareView fromMs={exportFromMs} toMs={exportToMs} mean={mean} />
-    </div>
-  );
-}
 
 const GRAIN_OPTIONS: { id: TrendGrain; label: string }[] = [
   { id: "raw", label: "3 perc" },
@@ -430,6 +362,7 @@ export function DailyChart({
           canShowMax={canShowMax}
           maxVisible={maxVisible}
           onMaxVisibleChange={setMaxVisible}
+          ariaControls="napi"
         />
         {trend.length === 0 ? (
           <p className="chart-empty">Nincs adat a kiválasztott időszakban.</p>
@@ -440,7 +373,12 @@ export function DailyChart({
               data={chartPoints}
               margin={{ top: 18, right: 12, left: 0, bottom: 4 }}
             >
-              <CartesianGrid stroke={colors.grid} vertical={false} />
+              <CartesianGrid
+                stroke={colors.grid}
+                vertical={false}
+                syncWithTicks
+                horizontalValues={yTicks}
+              />
               <XAxis
                 dataKey="i"
                 type="number"
