@@ -54,24 +54,32 @@ describe("App", () => {
 
     expect(await findByText("Levegőminőség Nagymaroson")).toBeInTheDocument();
     expect(getByText("Adatsor")).toBeInTheDocument();
-    expect(getByText("Időszak")).toBeInTheDocument();
-    expect(
-      getByText("A kiválasztott időszak számokban"),
-    ).toBeInTheDocument();
-    expect(document.querySelector(".filter-bar > .period-lead")).toBeTruthy();
+    expect(getByText("A kiválasztott időszak összképe")).toBeInTheDocument();
+    expect(document.querySelector(".filter-bar > .period-lead")).toBeNull();
 
     await waitFor(() => {
       expect(document.querySelector(".recharts-responsive-container")).toBeTruthy();
     });
   });
 
-  test("kapcsolható az egyszerű nézet", async () => {
+  test("kapcsolható a részletes nézet", async () => {
     const user = userEvent.setup();
     const { findByRole, findByText, queryByRole, queryByText } = render(<App />);
 
     await findByText("Levegőminőség Nagymaroson");
-    await user.click(await findByRole("button", { name: "Egyszerű nézet" }));
+    expect(
+      await findByText("A kiválasztott időszak összképe"),
+    ).toBeInTheDocument();
+    expect(window.location.search).not.toContain("view=");
 
+    await user.click(await findByRole("button", { name: "Részletes nézet" }));
+    expect(
+      await findByText("A kiválasztott időszak számokban"),
+    ).toBeInTheDocument();
+    expect(document.querySelector(".filter-bar > .period-lead")).toBeTruthy();
+    expect(window.location.search).toContain("view=detailed");
+
+    await user.click(await findByRole("button", { name: "Egyszerű nézet" }));
     expect(
       await findByText("A kiválasztott időszak összképe"),
     ).toBeInTheDocument();
@@ -82,12 +90,6 @@ describe("App", () => {
     expect(await findByRole("button", { name: "Hét" })).toBeInTheDocument();
     expect(
       await findByRole("heading", { name: "Az átlag alakulása" }),
-    ).toBeInTheDocument();
-    expect(window.location.search).toContain("view=simple");
-
-    await user.click(await findByRole("button", { name: "Részletes nézet" }));
-    expect(
-      await findByText("A kiválasztott időszak számokban"),
     ).toBeInTheDocument();
     expect(window.location.search).not.toContain("view=");
   });

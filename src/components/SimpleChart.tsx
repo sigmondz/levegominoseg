@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
 import { pmTone, who24h } from "../lib/aqi";
-import { buildYAxisTicks, chartYDomainMax, whoReferenceLabel } from "../lib/chartAxis";
+import { buildYAxisTicks, chartYDomainMax } from "../lib/chartAxis";
 import {
   CHART_ANIMATION_DURATION_MS,
   chartSeriesAnimated,
@@ -20,6 +20,7 @@ import {
 import { toneChartColor } from "../lib/theme";
 import type { DailyPoint } from "../lib/types";
 import { ChartYAxisTick } from "./ChartYAxisTick";
+import { WhoGuidelineLabel } from "./WhoGuidelineLabel";
 
 type Props = {
   daily: DailyPoint[];
@@ -190,7 +191,7 @@ export function SimpleChart({ daily, mean, metric, unit }: Props) {
                     stroke={colors.good}
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
-                    label={whoReferenceLabel(colors.good)}
+                    label={<WhoGuidelineLabel fill={colors.good} />}
                   />
                 ) : null}
                 {periodMean != null ? (

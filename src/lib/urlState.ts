@@ -162,7 +162,7 @@ export function buildDefaultViewState(meta: DatasetMeta): ViewState {
   });
   return {
     metric: DEFAULT_METRIC,
-    viewMode: "detailed",
+    viewMode: "simple",
     parentKey,
     monthSelection,
     within: "month",

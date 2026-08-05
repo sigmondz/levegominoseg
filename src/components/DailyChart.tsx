@@ -13,7 +13,7 @@ import {
 import { useChartColors } from "../hooks/useChartColors";
 import type { MaxWindow, SeriesEntry, TrendGrain, TrendPoint } from "../lib/types";
 import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
-import { buildYAxisTicks, chartYDomainMax, whoReferenceLabel } from "../lib/chartAxis";
+import { buildYAxisTicks, chartYDomainMax } from "../lib/chartAxis";
 import { downloadFilteredCsv } from "../lib/exportCsv";
 import {
   CHART_ANIMATION_DURATION_MS,
@@ -25,6 +25,7 @@ import { ChartYAxisTick } from "./ChartYAxisTick";
 import { IconActionButton } from "./IconActionButton";
 import { InfoTip } from "./InfoTip";
 import { ShareView } from "./ShareView";
+import { WhoGuidelineLabel } from "./WhoGuidelineLabel";
 
 type Props = {
   trend: TrendPoint[];
@@ -534,7 +535,7 @@ export function DailyChart({
                   stroke={colors.good}
                   strokeDasharray="4 4"
                   strokeWidth={1.5}
-                  label={whoReferenceLabel(colors.good)}
+                  label={<WhoGuidelineLabel fill={colors.good} />}
                 />
               ) : null}
               <ReferenceLine

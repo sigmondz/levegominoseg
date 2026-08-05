@@ -32,18 +32,6 @@ export function nearlyEqual(a: number, b: number, epsilon = 0.05): boolean {
   return Math.abs(a - b) <= epsilon;
 }
 
-/** Shared Recharts label for the green WHO guideline line. */
-export function whoReferenceLabel(fill: string) {
-  return {
-    value: "WHO irányérték",
-    position: "insideTopRight" as const,
-    fill,
-    fontFamily: "IBM Plex Mono",
-    fontSize: 14,
-    fontWeight: 700,
-  };
-}
-
 /**
  * Spacious Y ticks from 0…domainMax, always merging WHO / mean markers
  * so those reference levels land on the axis. Markers never remove each other.

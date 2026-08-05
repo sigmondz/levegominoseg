@@ -26,7 +26,7 @@ describe("urlState", () => {
     expect(view.trendGrain).toBe("day");
     expect(view.maxWindow).toBe("hour");
     expect(view.metric).toBe("PM2.5");
-    expect(view.viewMode).toBe("detailed");
+    expect(view.viewMode).toBe("simple");
   });
 
   test("parseViewState hónapnézet max ablak nem 3m", () => {
@@ -39,7 +39,7 @@ describe("urlState", () => {
 
   test("parseViewState legacy hónap paraméter", () => {
     const view = parseViewState(
-      "?h=2026-02&w=1d&d=2026-02-05&g=hour&m=15m",
+      "?h=2026-02&w=1d&d=2026-02-05&g=hour&m=15m&view=detailed",
       TEST_META,
       defaults,
     );
@@ -91,13 +91,13 @@ describe("urlState", () => {
         .within,
     ).toBe("7d");
     expect(parseViewState("?view=other", TEST_META, defaults).viewMode).toBe(
-      "detailed",
+      "simple",
     );
   });
 
   test("parseViewState custom tartomány", () => {
     const view = parseViewState(
-      "?h=2026-01&w=custom&from=2026-01-18&to=2026-01-22",
+      "?h=2026-01&w=custom&from=2026-01-18&to=2026-01-22&view=detailed",
       TEST_META,
       defaults,
     );
@@ -125,7 +125,7 @@ describe("urlState", () => {
     const custom = {
       ...defaults,
       metric: "PM1" as const,
-      viewMode: "simple" as const,
+      viewMode: "detailed" as const,
       monthSelection: "2026-02" as const,
       within: "7d" as const,
       windowStart: "2026-02-01",
@@ -134,7 +134,7 @@ describe("urlState", () => {
     };
     const built = buildSearchParams(custom, defaults);
     expect(built.get("metric")).toBe("pm1");
-    expect(built.get("view")).toBe("simple");
+    expect(built.get("view")).toBe("detailed");
     expect(built.get("h")).toBe("2026-02");
     expect(built.get("w")).toBe("7d");
     expect(built.get("d")).toBe("2026-02-01");
@@ -147,6 +147,7 @@ describe("urlState", () => {
       within: "custom" as const,
     };
     const simpleBuilt = buildSearchParams(simpleCustom, defaults);
+    expect(simpleBuilt.get("view")).toBeNull();
     expect(simpleBuilt.get("w")).toBeNull();
     expect(simpleBuilt.get("from")).toBeNull();
   });

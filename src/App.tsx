@@ -137,7 +137,7 @@ function initialMetricFromUrl(): MetricId {
 export default function App() {
   const { theme, toggleTheme } = useTheme();
   const [metric, setMetric] = useState<MetricId>(initialMetricFromUrl);
-  const [viewMode, setViewMode] = useState<ViewMode>("detailed");
+  const [viewMode, setViewMode] = useState<ViewMode>("simple");
   const [series, setSeries] = useState<SeriesFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [parentKey, setParentKey] = useState<ParentPeriodKey | null>(null);

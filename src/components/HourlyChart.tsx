@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
 import { pmTone, who24h } from "../lib/aqi";
-import { buildYAxisTicks, chartYDomainMax, whoReferenceLabel } from "../lib/chartAxis";
+import { buildYAxisTicks, chartYDomainMax } from "../lib/chartAxis";
 import {
   CHART_ANIMATION_DURATION_MS,
   chartSeriesAnimated,
@@ -21,6 +21,7 @@ import { toneChartColor } from "../lib/theme";
 import type { HourlyPoint } from "../lib/types";
 import { ChartYAxisTick } from "./ChartYAxisTick";
 import { InfoTip } from "./InfoTip";
+import { WhoGuidelineLabel } from "./WhoGuidelineLabel";
 
 type Props = {
   hourly: HourlyPoint[];
@@ -188,7 +189,7 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
                   stroke={colors.good}
                   strokeDasharray="4 4"
                   strokeWidth={1.5}
-                  label={whoReferenceLabel(colors.good)}
+                  label={<WhoGuidelineLabel fill={colors.good} />}
                 />
               ) : null}
               <ReferenceLine
