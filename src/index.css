@@ -2,6 +2,7 @@
 @import "./styles/base.css";
 @import "./styles/layout.css";
 @import "./styles/hero.css";
+@import "./styles/simple-overview.css";
 @import "./styles/section.css";
 @import "./styles/period.css";
 @import "./styles/share-view.css";

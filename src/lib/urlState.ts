@@ -30,11 +30,13 @@ import type {
   ParentPeriodKey,
   PeriodRange,
   TrendGrain,
+  ViewMode,
   WithinMonthScope,
 } from "./types";
 
 export type ViewState = {
   metric: MetricId;
+  viewMode: ViewMode;
   parentKey: ParentPeriodKey;
   monthSelection: MonthSelection;
   within: WithinMonthScope;
@@ -81,6 +83,8 @@ const MAX_WINDOW_VALUES: MaxWindow[] = [
   "day",
 ];
 
+const VIEW_MODE_VALUES: ViewMode[] = ["detailed", "simple"];
+
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function isWithin(value: string | null): value is WithinMonthScope {
@@ -93,6 +97,10 @@ function isGrain(value: string | null): value is TrendGrain {
 
 function isMaxWindow(value: string | null): value is MaxWindow {
   return value != null && (MAX_WINDOW_VALUES as string[]).includes(value);
+}
+
+function isViewMode(value: string | null): value is ViewMode {
+  return value != null && (VIEW_MODE_VALUES as string[]).includes(value);
 }
 
 function isDate(value: string | null): value is string {
@@ -154,6 +162,7 @@ export function buildDefaultViewState(meta: DatasetMeta): ViewState {
   });
   return {
     metric: DEFAULT_METRIC,
+    viewMode: "detailed",
     parentKey,
     monthSelection,
     within: "month",
@@ -189,6 +198,10 @@ export function parseViewState(
   const parentIds = new Set(parents.map((p) => p.id));
 
   const metric = parseMetricSlug(params.get("metric")) ?? defaults.metric;
+  const requestedViewMode = params.get("view");
+  const viewMode = isViewMode(requestedViewMode)
+    ? requestedViewMode
+    : defaults.viewMode;
 
   const h = params.get("h");
   const hm = params.get("hm");
@@ -220,7 +233,12 @@ export function parseViewState(
   }
 
   const wRaw = params.get("w");
-  const within = isWithin(wRaw) ? wRaw : defaults.within;
+  const parsedWithin = isWithin(wRaw) ? wRaw : defaults.within;
+  const within =
+    viewMode === "simple" &&
+    (parsedWithin === "1d" || parsedWithin === "custom")
+      ? "month"
+      : parsedWithin;
 
   const bounds = viewBounds(parentKey, monthSelection, meta.fromMs, meta.toMs);
   const days = listDaysInPeriod(bounds);
@@ -291,6 +309,7 @@ export function parseViewState(
 
   return {
     metric,
+    viewMode,
     parentKey,
     monthSelection,
     within,
@@ -318,6 +337,15 @@ export function buildSearchParams(
   if (state.metric !== defaults.metric) {
     params.set("metric", metricSlug(state.metric));
   }
+  if (state.viewMode !== defaults.viewMode) {
+    params.set("view", state.viewMode);
+  }
+
+  const within =
+    state.viewMode === "simple" &&
+    (state.within === "1d" || state.within === "custom")
+      ? "month"
+      : state.within;
 
   if (state.monthSelection === "full") {
     if (state.parentKey !== defaults.parentKey) {
@@ -330,15 +358,15 @@ export function buildSearchParams(
     params.set("hm", state.monthSelection);
   }
 
-  if (state.within !== "month") {
-    params.set("w", state.within);
+  if (within !== "month") {
+    params.set("w", within);
   }
-  if (state.within === "1d") {
+  if (within === "1d") {
     params.set("d", state.selectedDay);
-  } else if (state.within === "7d" || state.within === "14d") {
+  } else if (within === "7d" || within === "14d") {
     params.set("d", state.windowStart);
   }
-  if (state.within === "custom") {
+  if (within === "custom") {
     params.set("from", state.customFrom);
     params.set("to", state.customTo);
   }

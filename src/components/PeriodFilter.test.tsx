@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import { render } from "@testing-library/react";
+import { render, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { PeriodFilter } from "./PeriodFilter";
 import { TEST_META } from "../test/fixtures";
@@ -105,7 +105,7 @@ describe("PeriodFilter", () => {
     const user = userEvent.setup();
     const onWindowStartChange = mock(() => {});
 
-    const { getAllByRole } = render(
+    const { getByRole } = render(
       <PeriodFilter
         {...baseProps}
         monthSelection="2026-01"
@@ -114,9 +114,8 @@ describe("PeriodFilter", () => {
       />,
     );
 
-    const weekButtons = getAllByRole("button").filter((btn) =>
-      btn.textContent?.includes("–"),
-    );
+    const weekGroup = getByRole("group", { name: "Hét" });
+    const weekButtons = within(weekGroup).getAllByRole("button");
     expect(weekButtons.length).toBeGreaterThan(0);
 
     await user.click(weekButtons[0]!);

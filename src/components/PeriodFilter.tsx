@@ -40,6 +40,7 @@ type Props = {
   onWindowStartChange: (start: string) => void;
   onCustomFromChange: (value: string) => void;
   onCustomToChange: (value: string) => void;
+  simple?: boolean;
 };
 
 export function PeriodFilter({
@@ -59,6 +60,7 @@ export function PeriodFilter({
   onWindowStartChange,
   onCustomFromChange,
   onCustomToChange,
+  simple = false,
 }: Props) {
   const parentPresets = useMemo(
     () => listParentPresets(dataFromMs, dataToMs),
@@ -107,10 +109,11 @@ export function PeriodFilter({
         </h2>
         <InfoTip label="Hogyan működik az időszakválasztó?" tipId="period-tip">
           Először a nagyobb tartományt választod (negyedév vagy félév), majd
-          azon belül egy hónapot vagy az összes hónapot. Alatta tovább
-          szűkítheted: teljes tartomány, egy nap, egy hét, két hét, vagy
-          egyéni dátumtól–ig. A grafikonok és a számok mindig a kiválasztott
-          időablakra vonatkoznak.
+          azon belül egy hónapot vagy az összes hónapot.{" "}
+          {simple
+            ? "Ezután az összes napos, heti vagy kéthetes előre megadott időablak közül választhatsz."
+            : "Alatta tovább szűkítheted: teljes tartomány, egy nap, egy hét, két hét, vagy egyéni dátumtól–ig."}{" "}
+          A grafikonok és a számok mindig a kiválasztott időablakra vonatkoznak.
         </InfoTip>
       </div>
 
@@ -165,7 +168,9 @@ export function PeriodFilter({
         role="group"
         aria-label="Időszak a tartományon belül"
       >
-        {WITHIN_PRESETS.map((item) => (
+        {WITHIN_PRESETS.filter(
+          (item) => !simple || (item.id !== "1d" && item.id !== "custom"),
+        ).map((item) => (
           <button
             key={item.id}
             type="button"
@@ -178,7 +183,7 @@ export function PeriodFilter({
         ))}
       </div>
 
-      {within === "1d" ? (
+      {!simple && within === "1d" ? (
         <div className="period-subchoice">
           <div
             className="period-chips period-chips--days"
@@ -236,7 +241,7 @@ export function PeriodFilter({
         </div>
       ) : null}
 
-      {within === "custom" ? (
+      {!simple && within === "custom" ? (
         <div className="period-custom">
           <DatePicker
             label="Ettől"

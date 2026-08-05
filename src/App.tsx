@@ -2,6 +2,9 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Hero } from "./components/Hero";
 import { MetricFilter } from "./components/MetricFilter";
 import { PeriodFilter } from "./components/PeriodFilter";
+import { PeriodLead } from "./components/PeriodLead";
+import { SimpleChart } from "./components/SimpleChart";
+import { SimpleOverview } from "./components/SimpleOverview";
 import { Stats } from "./components/Stats";
 import { WorstDays } from "./components/WorstDays";
 import { useTheme } from "./hooks/useTheme";
@@ -36,6 +39,7 @@ import type {
   PeriodRange,
   SeriesFile,
   TrendGrain,
+  ViewMode,
   WithinMonthScope,
 } from "./lib/types";
 import {
@@ -94,6 +98,7 @@ function applyViewState(
   view: ViewState,
   setters: {
     setMetric: (v: MetricId) => void;
+    setViewMode: (v: ViewMode) => void;
     setParentKey: (v: ParentPeriodKey) => void;
     setMonthSelection: (v: MonthSelection) => void;
     setWithin: (v: WithinMonthScope) => void;
@@ -106,6 +111,7 @@ function applyViewState(
   },
 ) {
   setters.setMetric(view.metric);
+  setters.setViewMode(view.viewMode);
   setters.setParentKey(view.parentKey);
   setters.setMonthSelection(view.monthSelection);
   setters.setWithin(view.within);
@@ -131,6 +137,7 @@ function initialMetricFromUrl(): MetricId {
 export default function App() {
   const { theme, toggleTheme } = useTheme();
   const [metric, setMetric] = useState<MetricId>(initialMetricFromUrl);
+  const [viewMode, setViewMode] = useState<ViewMode>("detailed");
   const [series, setSeries] = useState<SeriesFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [parentKey, setParentKey] = useState<ParentPeriodKey | null>(null);
@@ -172,6 +179,7 @@ export default function App() {
           const view = parseViewState(readSearch(), json.meta, defaults);
           applyViewState(view, {
             setMetric,
+            setViewMode,
             setParentKey,
             setMonthSelection,
             setWithin,
@@ -213,6 +221,7 @@ export default function App() {
       const view = parseViewState(readSearch(), series!.meta, defaults);
       applyViewState(view, {
         setMetric,
+        setViewMode,
         setParentKey,
         setMonthSelection,
         setWithin,
@@ -296,6 +305,7 @@ export default function App() {
     if (!series || !parentKey || !urlDefaults) return;
     const state: ViewState = {
       metric,
+      viewMode,
       parentKey,
       monthSelection,
       within,
@@ -310,6 +320,7 @@ export default function App() {
   }, [
     series,
     metric,
+    viewMode,
     parentKey,
     monthSelection,
     within,
@@ -379,127 +390,179 @@ export default function App() {
     series.meta.fromMs,
     series.meta.toMs,
   );
+  const loadedSeries = series;
+
+  function handleViewModeChange(next: ViewMode) {
+    if (next === "simple" && (within === "1d" || within === "custom")) {
+      resetWithinFields(
+        currentBounds,
+        loadedSeries.meta.fromMs,
+        loadedSeries.meta.toMs,
+        {
+          setWithin,
+          setSelectedDay,
+          setWindowStart,
+          setCustomFrom,
+          setCustomTo,
+        },
+      );
+    }
+    setViewMode(next);
+  }
+
+  const filterControls = (
+    <>
+      <PeriodFilter
+        parentKey={parentKey}
+        monthSelection={monthSelection}
+        within={within}
+        selectedDay={selectedDay}
+        windowStart={windowStart}
+        customFrom={customFrom}
+        customTo={customTo}
+        dataFromMs={series.meta.fromMs}
+        dataToMs={series.meta.toMs}
+        simple={viewMode === "simple"}
+        onParentChange={(parent) => {
+          const bounds = effectivePeriodBounds(
+            parent,
+            "full",
+            series.meta.fromMs,
+            series.meta.toMs,
+          );
+          setParentKey(parent);
+          setMonthSelection("full");
+          resetWithinFields(bounds, series.meta.fromMs, series.meta.toMs, {
+            setWithin,
+            setSelectedDay,
+            setWindowStart,
+            setCustomFrom,
+            setCustomTo,
+          });
+        }}
+        onMonthSelectionChange={(month) => {
+          const bounds = effectivePeriodBounds(
+            parentKey,
+            month,
+            series.meta.fromMs,
+            series.meta.toMs,
+          );
+          setMonthSelection(month);
+          resetWithinFields(bounds, series.meta.fromMs, series.meta.toMs, {
+            setWithin,
+            setSelectedDay,
+            setWindowStart,
+            setCustomFrom,
+            setCustomTo,
+          });
+        }}
+        onWithinChange={(next) => {
+          setWithin(next);
+          if (next === "1d") {
+            setSelectedDay(defaultDay(currentBounds, series.meta.toMs));
+          }
+          if (next === "7d") {
+            setWindowStart(
+              defaultWindow(currentBounds, series.meta.fromMs, 7),
+            );
+          }
+          if (next === "14d") {
+            setWindowStart(
+              defaultWindow(currentBounds, series.meta.fromMs, 14),
+            );
+          }
+        }}
+        onSelectedDayChange={setSelectedDay}
+        onWindowStartChange={setWindowStart}
+        onCustomFromChange={(value) => {
+          setCustomFrom(value);
+          setWithin("custom");
+        }}
+        onCustomToChange={(value) => {
+          setCustomTo(value);
+          setWithin("custom");
+        }}
+      />
+      <MetricFilter metric={metric} onMetricChange={setMetric} />
+      {viewMode === "detailed" ? <PeriodLead data={data} /> : null}
+    </>
+  );
 
   return (
     <div className="app">
-      <Hero data={data} theme={theme} onToggleTheme={toggleTheme} />
-      <div className="filter-bar">
-        <PeriodFilter
-          parentKey={parentKey}
-          monthSelection={monthSelection}
-          within={within}
-          selectedDay={selectedDay}
-          windowStart={windowStart}
-          customFrom={customFrom}
-          customTo={customTo}
-          dataFromMs={series.meta.fromMs}
-          dataToMs={series.meta.toMs}
-          onParentChange={(parent) => {
-            const bounds = effectivePeriodBounds(
-              parent,
-              "full",
-              series.meta.fromMs,
-              series.meta.toMs,
-            );
-            setParentKey(parent);
-            setMonthSelection("full");
-            resetWithinFields(bounds, series.meta.fromMs, series.meta.toMs, {
-              setWithin,
-              setSelectedDay,
-              setWindowStart,
-              setCustomFrom,
-              setCustomTo,
-            });
-          }}
-          onMonthSelectionChange={(month) => {
-            const bounds = effectivePeriodBounds(
-              parentKey,
-              month,
-              series.meta.fromMs,
-              series.meta.toMs,
-            );
-            setMonthSelection(month);
-            resetWithinFields(bounds, series.meta.fromMs, series.meta.toMs, {
-              setWithin,
-              setSelectedDay,
-              setWindowStart,
-              setCustomFrom,
-              setCustomTo,
-            });
-          }}
-          onWithinChange={(next) => {
-            setWithin(next);
-            if (next === "1d") {
-              setSelectedDay(defaultDay(currentBounds, series.meta.toMs));
-            }
-            if (next === "7d") {
-              setWindowStart(
-                defaultWindow(currentBounds, series.meta.fromMs, 7),
-              );
-            }
-            if (next === "14d") {
-              setWindowStart(
-                defaultWindow(currentBounds, series.meta.fromMs, 14),
-              );
-            }
-          }}
-          onSelectedDayChange={setSelectedDay}
-          onWindowStartChange={setWindowStart}
-          onCustomFromChange={(value) => {
-            setCustomFrom(value);
-            setWithin("custom");
-          }}
-          onCustomToChange={(value) => {
-            setCustomTo(value);
-            setWithin("custom");
-          }}
-        />
-        <MetricFilter metric={metric} onMetricChange={setMetric} />
-      </div>
-      <Stats data={data} />
-      <Suspense fallback={<div className="loading">Grafikonok…</div>}>
-        <DailyChart
-          trend={data.trend}
-          mean={data.mean}
-          metric={data.metric}
-          grain={trendGrain}
-          availableGrains={availableGrains}
-          maxWindow={maxWindow}
-          availableMaxWindows={availableMaxWindowOptions}
-          intervalMin={series.meta.intervalMin}
-          exportPoints={filteredPoints}
-          exportFromMs={data.fromMs}
-          exportToMs={data.toMs}
-          onGrainChange={setTrendGrain}
-          onMaxWindowChange={setMaxWindow}
-        />
-        <WorstDays
-          daily={data.daily}
-          metric={data.metric}
-          visible={within !== "1d" && data.daily.length >= 2}
-          onSelectDay={(date) => {
-            setWithin("1d");
-            setSelectedDay(date);
-            requestAnimationFrame(() => {
-              document
-                .getElementById("napi")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" });
-            });
-          }}
-        />
-        <HourlyChart hourly={data.hourlyMean} />
-      </Suspense>
+      <Hero
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
+      />
+      <div className="filter-bar">{filterControls}</div>
+      {viewMode === "simple" ? (
+        <>
+          <SimpleOverview data={data} />
+          <SimpleChart
+            daily={data.daily}
+            metric={data.metric}
+            unit={data.unit}
+          />
+        </>
+      ) : null}
+      {viewMode === "detailed" ? (
+        <>
+          <Stats data={data} />
+          <Suspense fallback={<div className="loading">Grafikonok…</div>}>
+            <DailyChart
+              trend={data.trend}
+              mean={data.mean}
+              metric={data.metric}
+              grain={trendGrain}
+              availableGrains={availableGrains}
+              maxWindow={maxWindow}
+              availableMaxWindows={availableMaxWindowOptions}
+              intervalMin={series.meta.intervalMin}
+              exportPoints={filteredPoints}
+              exportFromMs={data.fromMs}
+              exportToMs={data.toMs}
+              onGrainChange={setTrendGrain}
+              onMaxWindowChange={setMaxWindow}
+            />
+            <WorstDays
+              daily={data.daily}
+              metric={data.metric}
+              visible={within !== "1d" && data.daily.length >= 2}
+              onSelectDay={(date) => {
+                setWithin("1d");
+                setSelectedDay(date);
+                requestAnimationFrame(() => {
+                  document
+                    .getElementById("napi")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                });
+              }}
+            />
+            <HourlyChart hourly={data.hourlyMean} />
+          </Suspense>
+        </>
+      ) : null}
       <footer className="footer">
-        <span className="footer-meta">
-          {data.sensor} · {data.metric} · {dataFrom} →{" "}
-          {toDateInputValue(series.meta.toMs)} · {data.chipId}
-        </span>
-        <span className="footer-freshness">
-          Utolsó mérés: {lastMeasurement} · Nem élő adat
-        </span>
-        <span>
-          Forrás: Grafana CSV · <code>{csvPath(metric)}</code>
-        </span>
+        {viewMode === "simple" ? (
+          <span className="footer-freshness">
+            Utolsó mérés: {lastMeasurement} · Nem élő adat
+          </span>
+        ) : (
+          <>
+            <span className="footer-meta">
+              {data.sensor} · {data.metric} · {dataFrom} →{" "}
+              {toDateInputValue(series.meta.toMs)} · {data.chipId}
+            </span>
+            <span className="footer-freshness">
+              Utolsó mérés: {lastMeasurement} · Nem élő adat
+            </span>
+            <span>
+              Forrás: Grafana CSV · <code>{csvPath(metric)}</code>
+            </span>
+          </>
+        )}
       </footer>
     </div>
   );

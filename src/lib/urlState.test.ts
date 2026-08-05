@@ -26,6 +26,7 @@ describe("urlState", () => {
     expect(view.trendGrain).toBe("2d");
     expect(view.maxWindow).toBe("2h");
     expect(view.metric).toBe("PM2.5");
+    expect(view.viewMode).toBe("detailed");
   });
 
   test("parseViewState hónapnézet max ablak nem 3m", () => {
@@ -77,6 +78,23 @@ describe("urlState", () => {
     expect(invalid.metric).toBe("PM2.5");
   });
 
+  test("parseViewState egyszerű nézet paraméter", () => {
+    expect(parseViewState("?view=simple", TEST_META, defaults).viewMode).toBe(
+      "simple",
+    );
+    expect(
+      parseViewState("?view=simple&w=1d&d=2026-02-05", TEST_META, defaults)
+        .within,
+    ).toBe("month");
+    expect(
+      parseViewState("?view=simple&w=7d&d=2026-02-02", TEST_META, defaults)
+        .within,
+    ).toBe("7d");
+    expect(parseViewState("?view=other", TEST_META, defaults).viewMode).toBe(
+      "detailed",
+    );
+  });
+
   test("parseViewState custom tartomány", () => {
     const view = parseViewState(
       "?h=2026-01&w=custom&from=2026-01-18&to=2026-01-22",
@@ -107,6 +125,7 @@ describe("urlState", () => {
     const custom = {
       ...defaults,
       metric: "PM1" as const,
+      viewMode: "simple" as const,
       monthSelection: "2026-02" as const,
       within: "7d" as const,
       windowStart: "2026-02-01",
@@ -115,11 +134,21 @@ describe("urlState", () => {
     };
     const built = buildSearchParams(custom, defaults);
     expect(built.get("metric")).toBe("pm1");
+    expect(built.get("view")).toBe("simple");
     expect(built.get("h")).toBe("2026-02");
     expect(built.get("w")).toBe("7d");
     expect(built.get("d")).toBe("2026-02-01");
     expect(built.get("g")).toBe("hour");
     expect(built.get("m")).toBe("15m");
+
+    const simpleCustom = {
+      ...defaults,
+      viewMode: "simple" as const,
+      within: "custom" as const,
+    };
+    const simpleBuilt = buildSearchParams(simpleCustom, defaults);
+    expect(simpleBuilt.get("w")).toBeNull();
+    expect(simpleBuilt.get("from")).toBeNull();
   });
 
   test("buildSearchParams H1 szülő", () => {

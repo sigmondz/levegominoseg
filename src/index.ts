@@ -29,7 +29,11 @@ function start(port: number) {
             return new Response("Not found", { status: 404 });
           }
 
-          return new Response(file);
+          return new Response(await file.arrayBuffer(), {
+            headers: {
+              "Content-Type": file.type || "application/octet-stream",
+            },
+          });
         },
 
         "/*": index,

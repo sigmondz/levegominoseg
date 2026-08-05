@@ -73,6 +73,8 @@ export type Summary = {
   trendGrain: TrendGrain;
 };
 
+export type ViewMode = "detailed" | "simple";
+
 /** Chart aggregation density for the trend series */
 export type TrendGrain =
   | "raw"

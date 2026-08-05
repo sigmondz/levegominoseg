@@ -58,10 +58,38 @@ describe("App", () => {
     expect(
       getByText("A kiválasztott időszak számokban"),
     ).toBeInTheDocument();
+    expect(document.querySelector(".filter-bar > .period-lead")).toBeTruthy();
 
     await waitFor(() => {
       expect(document.querySelector(".recharts-responsive-container")).toBeTruthy();
     });
+  });
+
+  test("kapcsolható az egyszerű nézet", async () => {
+    const user = userEvent.setup();
+    const { findByRole, findByText, queryByRole, queryByText } = render(<App />);
+
+    await findByText("Levegőminőség Nagymaroson");
+    await user.click(await findByRole("button", { name: "Egyszerű nézet" }));
+
+    expect(
+      await findByText("A kiválasztott időszak összképe"),
+    ).toBeInTheDocument();
+    expect(queryByText("A kiválasztott időszak számokban")).toBeNull();
+    expect(document.querySelector(".filter-bar > .period-lead")).toBeNull();
+    expect(queryByRole("button", { name: "Nap" })).toBeNull();
+    expect(queryByRole("button", { name: "Egyéni" })).toBeNull();
+    expect(await findByRole("button", { name: "Hét" })).toBeInTheDocument();
+    expect(
+      await findByRole("heading", { name: "Az átlag alakulása" }),
+    ).toBeInTheDocument();
+    expect(window.location.search).toContain("view=simple");
+
+    await user.click(await findByRole("button", { name: "Részletes nézet" }));
+    expect(
+      await findByText("A kiválasztott időszak számokban"),
+    ).toBeInTheDocument();
+    expect(window.location.search).not.toContain("view=");
   });
 
   test("URL metric=pm1-ről indul", async () => {
