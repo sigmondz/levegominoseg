@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
-import { pmTone, who24h } from "../lib/aqi";
+import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
 import { buildYAxisTicks, chartYDomainMax } from "../lib/chartAxis";
 import {
   CHART_ANIMATION_DURATION_MS,
@@ -55,6 +55,7 @@ export function SimpleChart({
       ? toneChartColor(pmTone(periodMean, metric), colors)
       : colors.poor;
   const domainMax = chartYDomainMax(
+    GRAFANA_THRESHOLD,
     who ?? 0,
     periodMean ?? 0,
     ...points.map((point) => point.mean),
@@ -120,7 +121,7 @@ export function SimpleChart({
           {points.length === 0 ? (
             <p className="chart-empty">Nincs adat a kiválasztott időszakban.</p>
           ) : (
-            <ResponsiveContainer width="100%" height={320}>
+            <ResponsiveContainer width="100%" height={400}>
               <ComposedChart
                 key={`${metric}-${points.length}-${periodMean ?? "x"}-${maxVisible ? "max" : "mean"}-${points[0]?.label ?? ""}-${points.at(-1)?.label ?? ""}`}
                 data={chartPoints}
@@ -269,14 +270,29 @@ export function SimpleChart({
           )}
         </div>
 
-        <div className="simple-chart-key">
+        <div
+          className="simple-chart-key"
+          aria-label="Görbék jelmagyarázata"
+        >
           <span className="simple-chart-key-item">
             <span
               className="simple-chart-key-line"
               style={{ background: colors.chartMean }}
               aria-hidden="true"
             />
-            Napi átlag
+            <span className="label-with-tip">
+              <strong>Napi átlag</strong>
+              <InfoTip
+                label="Mi a napi átlag görbe?"
+                tipId="simple-series-mean-tip"
+              >
+                Az adott nap összes érvényes 3 perces mintájának számtani
+                átlaga. A napi tipikus terhelést mutatja: a rövid kiugrások
+                kevésbé húzzák el, mint a nyers méréseken. Így napokat
+                hasonlíthatsz össze, és látod, általában milyen volt a
+                levegőminőség. A grafikonon a kék görbe.
+              </InfoTip>
+            </span>
           </span>
           <span
             className={`simple-chart-key-item${maxVisible ? "" : " is-muted"}`}
@@ -286,7 +302,14 @@ export function SimpleChart({
               style={{ background: colors.bad }}
               aria-hidden="true"
             />
-            Max görbe
+            <span className="label-with-tip">
+              <strong>Max görbe</strong>
+              <InfoTip label="Mi a max görbe?" tipId="simple-series-max-tip">
+                Az adott nap csúcsterhelése: a max ablak a kiválasztott időszak
+                hosszához igazodik, és simítja a rövid kiugrásokat. A grafikonon
+                a piros görbe — a fenti gombbal kapcsolható.
+              </InfoTip>
+            </span>
           </span>
           {who != null ? (
             <>
@@ -296,8 +319,17 @@ export function SimpleChart({
                   style={{ background: colors.good }}
                   aria-hidden="true"
                 />
-                A zöld satírozás a WHO {who} {unit} vonala és az átlaggörbe
-                közötti, küszöb alatti részt jelzi.
+                <span className="label-with-tip">
+                  <strong>WHO irányérték alatti rész</strong>
+                  <InfoTip
+                    label="Mit jelöl a zöld satírozás?"
+                    tipId="simple-who-below-shade-tip"
+                  >
+                    A zöld satírozás csak a WHO {who} {unit} irányérték vonala és
+                    az átlaggörbe közötti részt jelzi, ahol az átlag a javasolt
+                    szint alatt van.
+                  </InfoTip>
+                </span>
               </span>
               <span className="simple-chart-key-item">
                 <span
@@ -305,8 +337,17 @@ export function SimpleChart({
                   style={{ background: colors.bad }}
                   aria-hidden="true"
                 />
-                A vörös satírozás a WHO {who} {unit} vonala és az átlaggörbe
-                közötti, küszöb feletti részt jelzi.
+                <span className="label-with-tip">
+                  <strong>WHO irányérték feletti rész</strong>
+                  <InfoTip
+                    label="Mit jelöl a vörös satírozás?"
+                    tipId="simple-who-shade-tip"
+                  >
+                    A vörös satírozás csak a WHO {who} {unit} irányérték vonala és
+                    az átlaggörbe közötti részt jelzi, ahol az átlag a javasolt
+                    szint felett van.
+                  </InfoTip>
+                </span>
               </span>
             </>
           ) : (

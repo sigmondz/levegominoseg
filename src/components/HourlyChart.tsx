@@ -10,7 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
-import { pmTone, who24h } from "../lib/aqi";
+import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
 import { buildYAxisTicks, chartYDomainMax } from "../lib/chartAxis";
 import {
   CHART_ANIMATION_DURATION_MS,
@@ -43,6 +43,7 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
   const hasThresholdCompliance =
     who != null && labeled.some((point) => point.mean < who);
   const domainMax = chartYDomainMax(
+    GRAFANA_THRESHOLD,
     who ?? 0,
     mean,
     ...labeled.map((point) => point.mean),
@@ -88,7 +89,7 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
         {chartPoints.length === 0 ? (
           <p className="chart-empty">Nincs adat a kiválasztott időszakban.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={400}>
             <ComposedChart
               key={`${metric}-${labeled.length}-${mean}-${labeled[0]?.label ?? ""}-${labeled.at(-1)?.label ?? ""}`}
               data={chartPoints}
@@ -249,7 +250,7 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
                     aria-hidden
                   />
                   <div className="label-with-tip">
-                    <strong>WHO alatti rész</strong>
+                    <strong>WHO irányérték alatti rész</strong>
                     <InfoTip
                       label="Mit jelöl a zöld satírozás?"
                       tipId="hourly-who-below-shade-tip"
@@ -267,7 +268,7 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
                     aria-hidden
                   />
                   <div className="label-with-tip">
-                    <strong>WHO feletti rész</strong>
+                    <strong>WHO irányérték feletti rész</strong>
                     <InfoTip
                       label="Mit jelöl a vörös satírozás?"
                       tipId="hourly-who-shade-tip"

@@ -566,7 +566,7 @@ export function DailyChart({
                     aria-hidden
                   />
                   <div className="label-with-tip">
-                    <strong>WHO alatti rész</strong>
+                    <strong>WHO irányérték alatti rész</strong>
                     <InfoTip
                       label="Mit jelöl a zöld satírozás?"
                       tipId="who-below-shade-tip"
@@ -584,7 +584,7 @@ export function DailyChart({
                     aria-hidden
                   />
                   <div className="label-with-tip">
-                    <strong>WHO feletti rész</strong>
+                    <strong>WHO irányérték feletti rész</strong>
                     <InfoTip
                       label="Mit jelöl a vörös satírozás?"
                       tipId="who-shade-tip"

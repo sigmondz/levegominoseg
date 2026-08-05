@@ -34,11 +34,25 @@ describe("SimpleChart", () => {
       getByText("Naponta egy pont mutatja a mért értékek átlagát."),
     ).toBeInTheDocument();
     expect(getByText("Napi átlag")).toBeInTheDocument();
+    expect(getByText("WHO irányérték alatti rész")).toBeInTheDocument();
+    expect(getByText("WHO irányérték feletti rész")).toBeInTheDocument();
     expect(
-      getByText(/A zöld satírozás a WHO 15 µg\/m³ vonala és az átlaggörbe/),
+      getByRole("button", { name: "Mi a napi átlag görbe?" }),
     ).toBeInTheDocument();
     expect(
-      getByText(/A vörös satírozás a WHO 15 µg\/m³ vonala és az átlaggörbe/),
+      getByRole("button", { name: "Mi a max görbe?" }),
+    ).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Mit jelöl a zöld satírozás?" }),
+    ).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Mit jelöl a vörös satírozás?" }),
+    ).toBeInTheDocument();
+    expect(
+      getByText(/A zöld satírozás csak a WHO 15 µg\/m³ irányérték vonala/),
+    ).toBeInTheDocument();
+    expect(
+      getByText(/A vörös satírozás csak a WHO 15 µg\/m³ irányérték vonala/),
     ).toBeInTheDocument();
     expect(document.querySelector(".recharts-responsive-container")).toBeTruthy();
     expect(document.querySelectorAll(".recharts-area-area").length).toBeGreaterThanOrEqual(1);

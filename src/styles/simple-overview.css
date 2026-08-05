@@ -276,6 +276,8 @@
 }
 
 .simple-chart-key {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -288,10 +290,36 @@
   line-height: 1.4;
 }
 
+.simple-chart-key:has(.info-tip:hover),
+.simple-chart-key:has(.info-tip:focus-visible) {
+  z-index: 8;
+}
+
 .simple-chart-key-item {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+}
+
+.simple-chart-key-item:has(.info-tip:hover),
+.simple-chart-key-item:has(.info-tip:focus-visible) {
+  z-index: 9;
+}
+
+.simple-chart-key-item .label-with-tip {
+  gap: 0.3rem;
+}
+
+.simple-chart-key-item .label-with-tip strong {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.simple-chart-key-item .info-tip {
+  flex-shrink: 0;
+  z-index: 1;
 }
 
 .simple-chart-key-line,
