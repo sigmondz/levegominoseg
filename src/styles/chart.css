@@ -102,6 +102,10 @@
   max-width: 100%;
 }
 
+.threshold-legend-list li.is-muted {
+  opacity: 0.45;
+}
+
 .threshold-legend-list .label-with-tip {
   display: inline-flex;
   align-items: center;

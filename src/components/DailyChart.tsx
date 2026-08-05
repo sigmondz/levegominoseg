@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Area,
   CartesianGrid,
@@ -276,7 +277,9 @@ export function DailyChart({
   const colors = useChartColors();
   const copy = grainCopy(grain, intervalMin, maxWindow);
   const who = who24h(metric);
-  const showMax = grain !== "raw";
+  const canShowMax = grain !== "raw";
+  const [maxVisible, setMaxVisible] = useState(true);
+  const showMax = canShowMax && maxVisible;
   const animate = trend.length <= 400;
   const chartPoints = trend.map((point) => ({
     ...point,
@@ -349,7 +352,7 @@ export function DailyChart({
             ))}
           </div>
         </div>
-        {showMax && maxWindowOptions.length > 0 ? (
+        {canShowMax && maxWindowOptions.length > 0 ? (
           <div className="max-window-row" role="group" aria-label="Max ablak">
             <div className="max-window-row-main">
               <div className="label-with-tip">
@@ -380,6 +383,15 @@ export function DailyChart({
                 ))}
               </div>
             </div>
+            <button
+              type="button"
+              className={`period-chip series-visibility-chip${maxVisible ? " is-active" : ""}`}
+              aria-pressed={maxVisible}
+              aria-controls="napi"
+              onClick={() => setMaxVisible((visible) => !visible)}
+            >
+              Max görbe
+            </button>
           </div>
         ) : null}
       </div>
@@ -512,8 +524,8 @@ export function DailyChart({
                 </InfoTip>
               </div>
             </li>
-            {showMax && copy.maxDesc ? (
-              <li>
+            {canShowMax && copy.maxDesc ? (
+              <li className={maxVisible ? undefined : "is-muted"}>
                 <span
                   className="series-swatch"
                   style={{ background: colors.bad }}

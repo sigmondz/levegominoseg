@@ -271,7 +271,7 @@ describe("aggregate", () => {
         TEST_META.fromMs + 90 * 24 * 60 * 60 * 1000,
         { extended: true },
       ),
-    ).toBe("2d");
+    ).toBe("day");
   });
 
   test("availableMaxWindows és resolveMaxWindow", () => {
@@ -294,8 +294,8 @@ describe("aggregate", () => {
     expect(suggestMaxWindow("15m", 3)).toBe("6m");
     expect(suggestMaxWindow("6m", 3)).toBe("3m");
 
-    // Teljes Q/H: hosszabb peak-ablak
-    expect(suggestMaxWindow("day", 3, { extended: true })).toBe("6h");
+    // Teljes Q/H: napi felbontás mellett 1 órás max ablak
+    expect(suggestMaxWindow("day", 3, { extended: true })).toBe("hour");
     expect(suggestMaxWindow("2d", 3, { extended: true })).toBe("2h");
     expect(suggestMaxWindow("week", 3, { extended: true })).toBe("day");
     expect(suggestMaxWindow("hour", 3, { extended: true })).toBe("30m");
@@ -317,7 +317,7 @@ describe("aggregate", () => {
     expect(resolveMaxWindow("day", 3, "2h")).toBe("hour");
     expect(resolveMaxWindow("day", 3, "12h", { extended: true })).toBe("12h");
     expect(resolveMaxWindow("week", 3, "day", { extended: true })).toBe("day");
-    expect(resolveMaxWindow("day", 3, "day", { extended: true })).toBe("6h");
+    expect(resolveMaxWindow("day", 3, "day", { extended: true })).toBe("hour");
   });
 
   test("buildSummary statisztikák és trend", () => {

@@ -11,8 +11,8 @@ describe("urlState", () => {
 
   test("buildDefaultViewState ésszerű alapértékek", () => {
     expect(defaults.within).toBe("month");
-    expect(defaults.trendGrain).toBe("2d");
-    expect(defaults.maxWindow).toBe("2h");
+    expect(defaults.trendGrain).toBe("day");
+    expect(defaults.maxWindow).toBe("hour");
     expect(defaults.metric).toBe("PM2.5");
     expect(defaults.parentKey).toBe("2026-Q1");
     expect(defaults.monthSelection).toBe("full");
@@ -23,8 +23,8 @@ describe("urlState", () => {
     expect(view.parentKey).toBe(defaults.parentKey);
     expect(view.monthSelection).toBe("full");
     expect(view.within).toBe("month");
-    expect(view.trendGrain).toBe("2d");
-    expect(view.maxWindow).toBe("2h");
+    expect(view.trendGrain).toBe("day");
+    expect(view.maxWindow).toBe("hour");
     expect(view.metric).toBe("PM2.5");
     expect(view.viewMode).toBe("detailed");
   });

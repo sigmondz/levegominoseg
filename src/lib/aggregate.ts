@@ -100,7 +100,7 @@ const MAX_WINDOW_PREFERENCE: Record<TrendGrain, MaxWindow[]> = {
 
 const MAX_WINDOW_PREFERENCE_EXTENDED: Partial<Record<TrendGrain, MaxWindow[]>> =
   {
-    day: ["6h", "2h", "hour", "30m", "15m"],
+    day: ["hour", "6h", "2h", "30m", "15m"],
     "2d": ["2h", "6h", "hour", "30m", "15m"],
     week: ["day", "12h", "6h", "2h", "hour"],
     hour: ["6h", "2h", "hour", "30m", "15m"],
@@ -668,14 +668,13 @@ export function availableTrendGrains(
 export function suggestTrendGrain(
   fromMs: number,
   toMs: number,
-  options?: { extended?: boolean },
+  _options?: { extended?: boolean },
 ): TrendGrain {
   const span = Math.max(0, toMs - fromMs);
   if (span <= 36 * HOUR_MS) return "15m";
   if (span <= 8 * DAY_MS) return "hour";
   if (span <= 16 * DAY_MS) return "2h";
-  // Full Q/H: 2-day is denser than week, still readable on long spans
-  if (options?.extended === true) return "2d";
+  // Full Q/H and longer spans: daily points match the simple overview grain
   return "day";
 }
 

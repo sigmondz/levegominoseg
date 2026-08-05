@@ -43,6 +43,30 @@
   min-width: 0;
 }
 
+.period-chip.series-visibility-chip {
+  flex-shrink: 0;
+  border-color: color-mix(in srgb, var(--bad) 55%, var(--line));
+  color: var(--bad);
+}
+
+.period-chip.series-visibility-chip:hover:not(.is-active) {
+  border-color: var(--bad);
+  background: color-mix(in srgb, var(--bad) 12%, transparent);
+  color: var(--bad);
+}
+
+.period-chip.series-visibility-chip.is-active {
+  background: var(--bad);
+  border-color: var(--bad);
+  color: #ffffff;
+}
+
+.period-chip.series-visibility-chip.is-active:hover {
+  background: color-mix(in srgb, var(--bad) 88%, white);
+  border-color: color-mix(in srgb, var(--bad) 88%, white);
+  color: #ffffff;
+}
+
 .export-btn {
   appearance: none;
   cursor: pointer;

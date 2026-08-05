@@ -109,6 +109,30 @@ describe("DailyChart", () => {
     expect(onMaxWindowChange).toHaveBeenCalledWith("6m");
   });
 
+  test("max görbe ki-be kapcsolható", async () => {
+    const user = userEvent.setup();
+
+    const { getByRole, container } = render(
+      <DailyChart
+        {...baseProps}
+        availableGrains={["day"]}
+        availableMaxWindows={["3m", "6m"]}
+      />,
+    );
+
+    const toggle = getByRole("button", { name: "Max görbe" });
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    expect(container.querySelectorAll(".recharts-line")).toHaveLength(2);
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    expect(container.querySelectorAll(".recharts-line")).toHaveLength(1);
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    expect(container.querySelectorAll(".recharts-line")).toHaveLength(2);
+  });
+
   test("CSV letöltés gomb kattintható adattal", async () => {
     const user = userEvent.setup();
 
