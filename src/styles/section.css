@@ -45,8 +45,13 @@
 
 .period-chip.series-visibility-chip {
   flex-shrink: 0;
+  height: 2.5rem;
+  padding: 0 0.85rem;
   border-color: color-mix(in srgb, var(--bad) 55%, var(--line));
   color: var(--bad);
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .period-chip.series-visibility-chip:hover:not(.is-active) {

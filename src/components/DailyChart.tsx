@@ -60,14 +60,31 @@ function ChartExportActions({
   exportFromMs,
   exportToMs,
   mean,
+  canShowMax,
+  maxVisible,
+  onMaxVisibleChange,
 }: {
   exportPoints: SeriesEntry[];
   exportFromMs: number;
   exportToMs: number;
   mean: number;
+  canShowMax: boolean;
+  maxVisible: boolean;
+  onMaxVisibleChange: (visible: boolean) => void;
 }) {
   return (
     <div className="chart-export-actions">
+      {canShowMax ? (
+        <button
+          type="button"
+          className={`period-chip series-visibility-chip${maxVisible ? " is-active" : ""}`}
+          aria-pressed={maxVisible}
+          aria-controls="napi"
+          onClick={() => onMaxVisibleChange(!maxVisible)}
+        >
+          Max görbe
+        </button>
+      ) : null}
       <IconActionButton
         label="CSV letöltés"
         tip="CSV letöltés. A kiválasztott időszak nyers, 3 perces mérési pontjait tölti le."
@@ -383,15 +400,6 @@ export function DailyChart({
                 ))}
               </div>
             </div>
-            <button
-              type="button"
-              className={`period-chip series-visibility-chip${maxVisible ? " is-active" : ""}`}
-              aria-pressed={maxVisible}
-              aria-controls="napi"
-              onClick={() => setMaxVisible((visible) => !visible)}
-            >
-              Max görbe
-            </button>
           </div>
         ) : null}
       </div>
@@ -401,6 +409,9 @@ export function DailyChart({
           exportFromMs={exportFromMs}
           exportToMs={exportToMs}
           mean={mean}
+          canShowMax={canShowMax}
+          maxVisible={maxVisible}
+          onMaxVisibleChange={setMaxVisible}
         />
         {trend.length === 0 ? (
           <p className="chart-empty">Nincs adat a kiválasztott időszakban.</p>
