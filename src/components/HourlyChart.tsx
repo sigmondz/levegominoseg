@@ -12,7 +12,11 @@ import {
 import { useChartColors } from "../hooks/useChartColors";
 import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
 import { buildYAxisTicks, chartYDomainMax, whoReferenceLabel } from "../lib/chartAxis";
-import { belowThresholdFillValue, thresholdFillValue } from "../lib/simpleChart";
+import {
+  CHART_ANIMATION_DURATION_MS,
+  chartSeriesAnimated,
+  withWhoThresholdShades,
+} from "../lib/simpleChart";
 import { toneChartColor } from "../lib/theme";
 import type { HourlyPoint } from "../lib/types";
 import { ChartYAxisTick } from "./ChartYAxisTick";
@@ -25,33 +29,29 @@ type Props = {
   intervalMin: number;
 };
 
-type ChartPoint = HourlyPoint & {
-  label: string;
-  shadedMean: number;
-  shadedBelow: number;
-};
-
 export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
   const colors = useChartColors();
   const who = who24h(metric);
-  const chartPoints: ChartPoint[] = hourly.map((point) => ({
+  const labeled = hourly.map((point) => ({
     ...point,
     label: `${String(point.hour).padStart(2, "0")}:00`,
-    shadedMean: thresholdFillValue(point.mean, who),
-    shadedBelow: belowThresholdFillValue(point.mean, who),
   }));
+  const chartPoints = withWhoThresholdShades(labeled, who);
   const hasThresholdExceedance =
-    who != null && chartPoints.some((point) => point.mean > who);
+    who != null && labeled.some((point) => point.mean > who);
   const hasThresholdCompliance =
-    who != null && chartPoints.some((point) => point.mean < who);
+    who != null && labeled.some((point) => point.mean < who);
   const domainMax = chartYDomainMax(
     GRAFANA_THRESHOLD,
     who ?? 0,
     mean,
-    ...chartPoints.map((point) => point.mean),
+    ...labeled.map((point) => point.mean),
   );
   const yTicks = buildYAxisTicks(domainMax, [who, mean]);
   const meanColor = toneChartColor(pmTone(mean, metric), colors);
+  const xMax = Math.max(labeled.length - 1, 0);
+  const xTicks = labeled.map((_, index) => index);
+  const animate = chartSeriesAnimated(labeled.length);
 
   const tooltipStyle = {
     background: colors.elevated,
@@ -90,12 +90,22 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
         ) : (
           <ResponsiveContainer width="100%" height={280}>
             <ComposedChart
+              key={`${metric}-${labeled.length}-${mean}-${labeled[0]?.label ?? ""}-${labeled.at(-1)?.label ?? ""}`}
               data={chartPoints}
               margin={{ top: 18, right: 12, left: 0, bottom: 4 }}
             >
               <CartesianGrid stroke={colors.grid} vertical={false} />
               <XAxis
-                dataKey="label"
+                dataKey="i"
+                type="number"
+                domain={[0, xMax]}
+                ticks={xTicks}
+                tickFormatter={(value) => {
+                  if (typeof value !== "number" || !Number.isInteger(value)) {
+                    return "";
+                  }
+                  return labeled[value]?.label ?? "";
+                }}
                 tick={tickStyle}
                 axisLine={{ stroke: colors.line }}
                 tickLine={false}
@@ -136,7 +146,10 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
                   `${Number(value).toFixed(1)} µg/m³`,
                   "",
                 ]}
-                labelFormatter={(label) => String(label)}
+                labelFormatter={(_label, payload) => {
+                  const row = payload?.[0]?.payload as { label?: string } | undefined;
+                  return row?.label ?? "";
+                }}
               />
               {hasThresholdCompliance ? (
                 <Area
@@ -146,8 +159,12 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
                   fill={colors.good}
                   fillOpacity={0.14}
                   stroke="none"
+                  connectNulls={false}
                   tooltipType="none"
                   legendType="none"
+                  isAnimationActive={animate}
+                  animationDuration={CHART_ANIMATION_DURATION_MS}
+                  animationEasing="ease-in-out"
                 />
               ) : null}
               {hasThresholdExceedance ? (
@@ -158,8 +175,12 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
                   fill={colors.bad}
                   fillOpacity={0.14}
                   stroke="none"
+                  connectNulls={false}
                   tooltipType="none"
                   legendType="none"
+                  isAnimationActive={animate}
+                  animationDuration={CHART_ANIMATION_DURATION_MS}
+                  animationEasing="ease-in-out"
                 />
               ) : null}
               {who != null ? (
@@ -191,6 +212,9 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
                 strokeWidth={2.25}
                 dot={false}
                 activeDot={{ r: 3 }}
+                isAnimationActive={animate}
+                animationDuration={CHART_ANIMATION_DURATION_MS}
+                animationEasing="ease-in-out"
               />
             </ComposedChart>
           </ResponsiveContainer>

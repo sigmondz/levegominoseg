@@ -39,7 +39,8 @@ export function whoReferenceLabel(fill: string) {
     position: "insideTopRight" as const,
     fill,
     fontFamily: "IBM Plex Mono",
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: 700,
   };
 }
 

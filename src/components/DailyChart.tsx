@@ -15,7 +15,11 @@ import type { MaxWindow, SeriesEntry, TrendGrain, TrendPoint } from "../lib/type
 import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
 import { buildYAxisTicks, chartYDomainMax, whoReferenceLabel } from "../lib/chartAxis";
 import { downloadFilteredCsv } from "../lib/exportCsv";
-import { thresholdFillValue, belowThresholdFillValue } from "../lib/simpleChart";
+import {
+  CHART_ANIMATION_DURATION_MS,
+  chartSeriesAnimated,
+  withWhoThresholdShades,
+} from "../lib/simpleChart";
 import { toneChartColor } from "../lib/theme";
 import { ChartYAxisTick } from "./ChartYAxisTick";
 import { IconActionButton } from "./IconActionButton";
@@ -300,22 +304,20 @@ export function DailyChart({
   const canShowMax = grain !== "raw";
   const [maxVisible, setMaxVisible] = useState(true);
   const showMax = canShowMax && maxVisible;
-  const animate = trend.length <= 400;
-  const chartPoints = trend.map((point) => ({
-    ...point,
-    shadedMean: thresholdFillValue(point.mean, who),
-    shadedBelow: belowThresholdFillValue(point.mean, who),
-  }));
+  const animate = chartSeriesAnimated(trend.length);
+  const chartPoints = withWhoThresholdShades(trend, who);
   const hasThresholdExceedance =
     who != null && trend.some((point) => point.mean > who);
   const hasThresholdCompliance =
     who != null && trend.some((point) => point.mean < who);
+  const xMax = Math.max(trend.length - 1, 0);
+  const xTicks = trend.map((_, index) => index);
   const domainMax = chartYDomainMax(
     GRAFANA_THRESHOLD,
     who ?? 0,
     mean,
     ...trend.map((point) => point.mean),
-    ...trend.map((point) => point.max),
+    ...(showMax ? trend.map((point) => point.max) : []),
   );
   const yTicks = buildYAxisTicks(domainMax, [who, mean]);
   const meanColor = toneChartColor(pmTone(mean, metric), colors);
@@ -433,12 +435,22 @@ export function DailyChart({
         ) : (
           <ResponsiveContainer width="100%" height={400}>
             <ComposedChart
+              key={`${metric}-${trend.length}-${mean}-${grain}-${showMax ? "max" : "mean"}-${trend[0]?.label ?? ""}-${trend.at(-1)?.label ?? ""}`}
               data={chartPoints}
               margin={{ top: 18, right: 12, left: 0, bottom: 4 }}
             >
               <CartesianGrid stroke={colors.grid} vertical={false} />
               <XAxis
-                dataKey="label"
+                dataKey="i"
+                type="number"
+                domain={[0, xMax]}
+                ticks={xTicks}
+                tickFormatter={(value) => {
+                  if (typeof value !== "number" || !Number.isInteger(value)) {
+                    return "";
+                  }
+                  return trend[value]?.label ?? "";
+                }}
                 tick={tickStyle}
                 axisLine={{ stroke: colors.line }}
                 tickLine={false}
@@ -479,7 +491,10 @@ export function DailyChart({
                   `${Number(value).toFixed(1)} µg/m³`,
                   "",
                 ]}
-                labelFormatter={(label) => String(label)}
+                labelFormatter={(_label, payload) => {
+                  const row = payload?.[0]?.payload as { label?: string } | undefined;
+                  return row?.label ?? "";
+                }}
               />
               {hasThresholdCompliance ? (
                 <Area
@@ -489,9 +504,12 @@ export function DailyChart({
                   fill={colors.good}
                   fillOpacity={0.14}
                   stroke="none"
+                  connectNulls={false}
                   tooltipType="none"
                   legendType="none"
                   isAnimationActive={animate}
+                  animationDuration={CHART_ANIMATION_DURATION_MS}
+                  animationEasing="ease-in-out"
                 />
               ) : null}
               {hasThresholdExceedance ? (
@@ -502,9 +520,12 @@ export function DailyChart({
                   fill={colors.bad}
                   fillOpacity={0.14}
                   stroke="none"
+                  connectNulls={false}
                   tooltipType="none"
                   legendType="none"
                   isAnimationActive={animate}
+                  animationDuration={CHART_ANIMATION_DURATION_MS}
+                  animationEasing="ease-in-out"
                 />
               ) : null}
               {who != null ? (
@@ -537,6 +558,8 @@ export function DailyChart({
                 dot={false}
                 activeDot={{ r: 3 }}
                 isAnimationActive={animate}
+                animationDuration={CHART_ANIMATION_DURATION_MS}
+                animationEasing="ease-in-out"
               />
               {showMax ? (
                 <Line
@@ -549,6 +572,8 @@ export function DailyChart({
                   dot={false}
                   activeDot={{ r: 3 }}
                   isAnimationActive={animate}
+                  animationDuration={CHART_ANIMATION_DURATION_MS}
+                  animationEasing="ease-in-out"
                 />
               ) : null}
             </ComposedChart>

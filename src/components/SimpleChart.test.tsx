@@ -50,7 +50,7 @@ describe("SimpleChart", () => {
     expect(document.querySelectorAll(".recharts-area-area")).toHaveLength(0);
   });
 
-  test("a kitöltés alapja a WHO-vonal, nem a grafikon alja", () => {
+  test("a kitöltés a WHO-vonalhoz van clampelve, folytonos Area-hoz", () => {
     expect(thresholdFillValue(10, 15)).toBe(15);
     expect(thresholdFillValue(25, 15)).toBe(25);
     expect(thresholdFillValue(25, null)).toBe(0);
