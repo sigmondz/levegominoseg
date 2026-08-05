@@ -6,6 +6,7 @@ import {
   who24h,
   type PmTone,
 } from "../lib/aqi";
+import { InfoTip } from "./InfoTip";
 
 type Props = {
   data: Summary;
@@ -45,7 +46,9 @@ function explanation(tone: PmTone): string {
 export function SimpleOverview({ data }: Props) {
   const hasData = data.valid > 0;
   const tone = hasData ? pmTone(data.mean, data.metric) : null;
-  const status = hasData ? capitalize(pmLabel(data.mean, data.metric)) : "Nincs mérési adat";
+  const status = hasData
+    ? capitalize(pmLabel(data.mean, data.metric))
+    : "Nincs mérési adat";
   const statusClass = tone
     ? `simple-overview--${tone}`
     : "simple-overview--empty";
@@ -105,7 +108,17 @@ export function SimpleOverview({ data }: Props) {
           <div className={metricsClass}>
             {showDaysAboveWho ? (
               <div className="simple-overview-metric simple-overview-metric--start">
-                <span>WHO érték felett</span>
+                <span className="label-with-tip simple-overview-metric-label">
+                  <span>WHO érték felett</span>
+                  <InfoTip
+                    label="Mik a WHO feletti napok?"
+                    tipId="simple-days-above-who-tip"
+                  >
+                    Hány napnak volt a napi átlaga a WHO {who} µg/m³ irányérték
+                    felett, a kiválasztott időszak összes naptári napjához
+                    képest.
+                  </InfoTip>
+                </span>
                 <strong className={`tone-${daysTone}`}>
                   {data.daysAboveWho}
                   <span className="simple-overview-metric-total">
@@ -116,13 +129,28 @@ export function SimpleOverview({ data }: Props) {
               </div>
             ) : null}
             <div className="simple-overview-metric simple-overview-metric--center">
-              <span>Időszakos átlag</span>
+              <span className="label-with-tip simple-overview-metric-label">
+                <span>Időszakos átlag</span>
+                <InfoTip
+                  label="Mi az időszakos átlag?"
+                  tipId="simple-mean-tip"
+                >
+                  {who != null
+                    ? `A kiválasztott időszak összes érvényes 3 perces mérésének számtani közepe, a WHO ${who} µg/m³ irányértékhez viszonyítva.`
+                    : "A kiválasztott időszak összes érvényes 3 perces mérésének számtani közepe. A PM1-re nincs hivatalos WHO 24 órás irányérték."}
+                </InfoTip>
+              </span>
               <strong className={`tone-${tone}`}>
                 {data.mean.toFixed(1)} <small>{data.unit}</small>
               </strong>
             </div>
             <div className="simple-overview-metric simple-overview-metric--end">
-              <span>Maximum</span>
+              <span className="label-with-tip simple-overview-metric-label">
+                <span>Maximum</span>
+                <InfoTip label="Mi a maximum?" tipId="simple-max-tip">
+                  A kiválasztott időszak legmagasabb 3 perces mérése.
+                </InfoTip>
+              </span>
               <strong className={`tone-${maxTone}`}>
                 {data.max} <small>{data.unit}</small>
               </strong>

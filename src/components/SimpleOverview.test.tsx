@@ -24,6 +24,13 @@ describe("SimpleOverview", () => {
     expect(getByText("Időszakos átlag")).toBeInTheDocument();
     expect(getByText("WHO érték felett")).toBeInTheDocument();
     expect(getByText("Maximum")).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Mik a WHO feletti napok?" }),
+    ).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Mi az időszakos átlag?" }),
+    ).toBeInTheDocument();
+    expect(getByRole("button", { name: "Mi a maximum?" })).toBeInTheDocument();
     expect(container.textContent).toContain(
       `${summary.daysAboveWho}/${summary.daysTotal}`,
     );

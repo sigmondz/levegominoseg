@@ -137,9 +137,9 @@
 .stat-label {
   font-family: var(--font-mono);
   font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: none;
   color: var(--text);
   padding-bottom: 0.45rem;
   align-self: start;
