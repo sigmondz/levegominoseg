@@ -1,7 +1,8 @@
 import {
+  Area,
   CartesianGrid,
+  ComposedChart,
   Line,
-  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -12,6 +13,7 @@ import { useChartColors } from "../hooks/useChartColors";
 import type { MaxWindow, SeriesEntry, TrendGrain, TrendPoint } from "../lib/types";
 import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
 import { downloadFilteredCsv } from "../lib/exportCsv";
+import { thresholdFillValue } from "../lib/simpleChart";
 import { IconActionButton } from "./IconActionButton";
 import { InfoTip } from "./InfoTip";
 import { ShareView } from "./ShareView";
@@ -276,6 +278,12 @@ export function DailyChart({
   const who = who24h(metric);
   const showMax = grain !== "raw";
   const animate = trend.length <= 400;
+  const chartPoints = trend.map((point) => ({
+    ...point,
+    shadedMean: thresholdFillValue(point.mean, who),
+  }));
+  const hasThresholdExceedance =
+    who != null && trend.some((point) => point.mean > who);
 
   const tooltipStyle = {
     background: colors.elevated,
@@ -386,8 +394,8 @@ export function DailyChart({
           <p className="chart-empty">Nincs adat a kiválasztott időszakban.</p>
         ) : (
           <ResponsiveContainer width="100%" height={400}>
-            <LineChart
-              data={trend}
+            <ComposedChart
+              data={chartPoints}
               margin={{ top: 8, right: 12, left: 0, bottom: 4 }}
             >
               <CartesianGrid stroke={colors.grid} vertical={false} />
@@ -421,6 +429,19 @@ export function DailyChart({
                 ]}
                 labelFormatter={(label) => String(label)}
               />
+              {hasThresholdExceedance ? (
+                <Area
+                  type="monotone"
+                  dataKey="shadedMean"
+                  baseValue={who ?? 0}
+                  fill={colors.bad}
+                  fillOpacity={0.14}
+                  stroke="none"
+                  tooltipType="none"
+                  legendType="none"
+                  isAnimationActive={animate}
+                />
+              ) : null}
               {who != null ? (
                 <ReferenceLine
                   y={who}
@@ -464,7 +485,7 @@ export function DailyChart({
                   isAnimationActive={animate}
                 />
               ) : null}
-            </LineChart>
+            </ComposedChart>
           </ResponsiveContainer>
         )}
 
@@ -502,6 +523,26 @@ export function DailyChart({
                   <strong>Max görbe</strong>
                   <InfoTip label="Mi a max görbe?" tipId="series-max-tip">
                     {copy.maxDesc}
+                  </InfoTip>
+                </div>
+              </li>
+            ) : null}
+            {who != null ? (
+              <li>
+                <span
+                  className="series-swatch series-swatch--band"
+                  style={{ background: colors.bad }}
+                  aria-hidden
+                />
+                <div className="label-with-tip">
+                  <strong>WHO feletti rész</strong>
+                  <InfoTip
+                    label="Mit jelöl a vörös satírozás?"
+                    tipId="who-shade-tip"
+                  >
+                    A vörös satírozás csak a WHO {who} µg/m³ irányérték vonala
+                    és az átlaggörbe közötti részt jelzi, ahol az átlag a
+                    javasolt szint felett van.
                   </InfoTip>
                 </div>
               </li>

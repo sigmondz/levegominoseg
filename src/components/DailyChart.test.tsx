@@ -48,6 +48,10 @@ describe("DailyChart", () => {
       getByRole("button", { name: "Mi a WHO irányérték?" }),
     ).toBeInTheDocument();
     expect(
+      getByRole("button", { name: "Mit jelöl a vörös satírozás?" }),
+    ).toBeInTheDocument();
+    expect(getByText("WHO feletti rész")).toBeInTheDocument();
+    expect(
       getByRole("button", { name: "Mi a kiválasztott időszak átlaga?" }),
     ).toBeInTheDocument();
     expect(
@@ -64,10 +68,14 @@ describe("DailyChart", () => {
   });
 
   test("PM1-nél nincs WHO irányérték", () => {
-    const { queryByText } = render(
+    const { queryByText, queryByRole } = render(
       <DailyChart {...baseProps} metric="PM1" />,
     );
     expect(queryByText("WHO 24 órás irányérték")).toBeNull();
+    expect(queryByText("WHO feletti rész")).toBeNull();
+    expect(
+      queryByRole("button", { name: "Mit jelöl a vörös satírozás?" }),
+    ).toBeNull();
   });
 
   test("adatsűrűség gombok váltanak", async () => {

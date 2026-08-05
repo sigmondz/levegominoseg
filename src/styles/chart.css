@@ -146,6 +146,12 @@
   border-radius: 999px;
 }
 
+.series-swatch--band {
+  height: 0.7rem;
+  opacity: 0.35;
+  border-radius: 2px;
+}
+
 .threshold-line {
   display: block;
   width: 1rem;
