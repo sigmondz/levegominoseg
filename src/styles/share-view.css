@@ -1,8 +1,11 @@
 .chart-export-actions {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  z-index: 3;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-xs);
-  flex-shrink: 0;
 }

@@ -372,25 +372,16 @@ export function DailyChart({
                 ))}
               </div>
             </div>
-            <ChartExportActions
-              exportPoints={exportPoints}
-              exportFromMs={exportFromMs}
-              exportToMs={exportToMs}
-              mean={mean}
-            />
           </div>
-        ) : (
-          <div className="max-window-row max-window-row--export-only">
-            <ChartExportActions
-              exportPoints={exportPoints}
-              exportFromMs={exportFromMs}
-              exportToMs={exportToMs}
-              mean={mean}
-            />
-          </div>
-        )}
+        ) : null}
       </div>
       <div className="chart-shell">
+        <ChartExportActions
+          exportPoints={exportPoints}
+          exportFromMs={exportFromMs}
+          exportToMs={exportToMs}
+          mean={mean}
+        />
         {trend.length === 0 ? (
           <p className="chart-empty">Nincs adat a kiválasztott időszakban.</p>
         ) : (

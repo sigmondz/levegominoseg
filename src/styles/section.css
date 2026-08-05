@@ -43,10 +43,6 @@
   min-width: 0;
 }
 
-.max-window-row--export-only {
-  justify-content: flex-end;
-}
-
 .export-btn {
   appearance: none;
   cursor: pointer;

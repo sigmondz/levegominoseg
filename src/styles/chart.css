@@ -8,6 +8,7 @@
 }
 
 .chart-shell {
+  position: relative;
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 0.5rem 0.35rem 0.25rem;
