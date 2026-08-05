@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
-import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
+import { pmTone, who24h } from "../lib/aqi";
 import { buildYAxisTicks, chartYDomainMax } from "../lib/chartAxis";
 import {
   CHART_ANIMATION_DURATION_MS,
@@ -55,7 +55,6 @@ export function SimpleChart({
       ? toneChartColor(pmTone(periodMean, metric), colors)
       : colors.poor;
   const domainMax = chartYDomainMax(
-    GRAFANA_THRESHOLD,
     who ?? 0,
     periodMean ?? 0,
     ...points.map((point) => point.mean),

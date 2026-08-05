@@ -10,7 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
-import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
+import { pmTone, who24h } from "../lib/aqi";
 import { buildYAxisTicks, chartYDomainMax } from "../lib/chartAxis";
 import {
   CHART_ANIMATION_DURATION_MS,
@@ -43,7 +43,6 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
   const hasThresholdCompliance =
     who != null && labeled.some((point) => point.mean < who);
   const domainMax = chartYDomainMax(
-    GRAFANA_THRESHOLD,
     who ?? 0,
     mean,
     ...labeled.map((point) => point.mean),
