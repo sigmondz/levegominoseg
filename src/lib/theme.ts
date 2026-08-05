@@ -1,3 +1,5 @@
+import type { PmTone } from "./aqi";
+
 export type Theme = "light" | "dark";
 
 export const THEME_STORAGE_KEY = "levego-theme";
@@ -46,6 +48,7 @@ export type ChartColors = {
   elevated: string;
   accent: string;
   good: string;
+  moderate: string;
   poor: string;
   bad: string;
   chartMean: string;
@@ -60,8 +63,22 @@ export function readChartColors(): ChartColors {
     elevated: readCssVar("--bg-elevated"),
     accent: readCssVar("--accent"),
     good: readCssVar("--good"),
+    moderate: readCssVar("--moderate"),
     poor: readCssVar("--poor"),
     bad: readCssVar("--bad"),
     chartMean: readCssVar("--chart-mean"),
   };
+}
+
+export function toneChartColor(tone: PmTone, colors: ChartColors): string {
+  switch (tone) {
+    case "good":
+      return colors.good;
+    case "moderate":
+      return colors.moderate;
+    case "poor":
+      return colors.poor;
+    case "bad":
+      return colors.bad;
+  }
 }

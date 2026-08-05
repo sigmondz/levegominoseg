@@ -502,6 +502,7 @@ export default function App() {
           <SimpleOverview data={data} />
           <SimpleChart
             daily={data.daily}
+            mean={data.mean}
             metric={data.metric}
             unit={data.unit}
           />

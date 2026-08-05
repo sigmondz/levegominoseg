@@ -9,6 +9,7 @@ import { SimpleChart } from "./SimpleChart";
 
 const baseProps = {
   daily: TEST_DAILY,
+  mean: 27.7,
   metric: "PM2.5",
   unit: "µg/m³",
 };

@@ -11,8 +11,11 @@ import {
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
 import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
+import { buildYAxisTicks, chartYDomainMax } from "../lib/chartAxis";
 import { belowThresholdFillValue, thresholdFillValue } from "../lib/simpleChart";
+import { toneChartColor } from "../lib/theme";
 import type { HourlyPoint } from "../lib/types";
+import { ChartYAxisTick } from "./ChartYAxisTick";
 import { InfoTip } from "./InfoTip";
 
 type Props = {
@@ -41,13 +44,14 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
     who != null && chartPoints.some((point) => point.mean > who);
   const hasThresholdCompliance =
     who != null && chartPoints.some((point) => point.mean < who);
-  const domainMax = Math.max(
+  const domainMax = chartYDomainMax(
     GRAFANA_THRESHOLD,
     who ?? 0,
     mean,
     ...chartPoints.map((point) => point.mean),
-    1,
   );
+  const yTicks = buildYAxisTicks(domainMax, [who, mean]);
+  const meanColor = toneChartColor(pmTone(mean, metric), colors);
 
   const tooltipStyle = {
     background: colors.elevated,
@@ -100,11 +104,24 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
                 tickMargin={6}
               />
               <YAxis
-                tick={tickStyle}
+                ticks={yTicks}
+                interval={0}
+                tick={(props) => (
+                  <ChartYAxisTick
+                    {...props}
+                    who={who}
+                    mean={mean}
+                    whoColor={colors.good}
+                    meanColor={meanColor}
+                    muted={colors.textMuted}
+                    fontSize={tickStyle.fontSize}
+                    fontFamily={tickStyle.fontFamily}
+                  />
+                )}
                 axisLine={false}
                 tickLine={false}
-                width={42}
-                domain={[0, Math.ceil(domainMax * 1.05)]}
+                width={52}
+                domain={[0, domainMax]}
                 label={{
                   value: "µg/m³",
                   angle: -90,
@@ -155,7 +172,7 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
               ) : null}
               <ReferenceLine
                 y={mean}
-                stroke={colors.poor}
+                stroke={meanColor}
                 strokeDasharray="2 6"
                 strokeWidth={1.5}
               />
@@ -275,7 +292,7 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
             <li>
               <span
                 className="threshold-line threshold-line--mean"
-                style={{ borderTopColor: colors.poor }}
+                style={{ borderTopColor: meanColor }}
                 aria-hidden
               />
               <div className="threshold-legend-item">

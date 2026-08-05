@@ -13,8 +13,11 @@ import {
 import { useChartColors } from "../hooks/useChartColors";
 import type { MaxWindow, SeriesEntry, TrendGrain, TrendPoint } from "../lib/types";
 import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
+import { buildYAxisTicks, chartYDomainMax } from "../lib/chartAxis";
 import { downloadFilteredCsv } from "../lib/exportCsv";
 import { thresholdFillValue, belowThresholdFillValue } from "../lib/simpleChart";
+import { toneChartColor } from "../lib/theme";
+import { ChartYAxisTick } from "./ChartYAxisTick";
 import { IconActionButton } from "./IconActionButton";
 import { InfoTip } from "./InfoTip";
 import { ShareView } from "./ShareView";
@@ -307,6 +310,15 @@ export function DailyChart({
     who != null && trend.some((point) => point.mean > who);
   const hasThresholdCompliance =
     who != null && trend.some((point) => point.mean < who);
+  const domainMax = chartYDomainMax(
+    GRAFANA_THRESHOLD,
+    who ?? 0,
+    mean,
+    ...trend.map((point) => point.mean),
+    ...trend.map((point) => point.max),
+  );
+  const yTicks = buildYAxisTicks(domainMax, [who, mean]);
+  const meanColor = toneChartColor(pmTone(mean, metric), colors);
 
   const tooltipStyle = {
     background: colors.elevated,
@@ -435,10 +447,24 @@ export function DailyChart({
                 tickMargin={6}
               />
               <YAxis
-                tick={tickStyle}
+                domain={[0, domainMax]}
+                ticks={yTicks}
+                interval={0}
+                tick={(props) => (
+                  <ChartYAxisTick
+                    {...props}
+                    who={who}
+                    mean={mean}
+                    whoColor={colors.good}
+                    meanColor={meanColor}
+                    muted={colors.textMuted}
+                    fontSize={tickStyle.fontSize}
+                    fontFamily={tickStyle.fontFamily}
+                  />
+                )}
                 axisLine={false}
                 tickLine={false}
-                width={42}
+                width={52}
                 label={{
                   value: "µg/m³",
                   angle: -90,
@@ -491,7 +517,7 @@ export function DailyChart({
               ) : null}
               <ReferenceLine
                 y={mean}
-                stroke={colors.poor}
+                stroke={meanColor}
                 strokeDasharray="2 6"
                 strokeWidth={1.5}
               />
@@ -639,7 +665,7 @@ export function DailyChart({
             <li>
               <span
                 className="threshold-line threshold-line--mean"
-                style={{ borderTopColor: colors.poor }}
+                style={{ borderTopColor: meanColor }}
                 aria-hidden
               />
               <div className="threshold-legend-item">

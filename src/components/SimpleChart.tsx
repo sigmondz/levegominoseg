@@ -10,15 +10,19 @@ import {
   YAxis,
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
-import { who24h } from "../lib/aqi";
+import { pmTone, who24h } from "../lib/aqi";
+import { buildYAxisTicks, chartYDomainMax } from "../lib/chartAxis";
 import {
   belowThresholdFillValue,
   thresholdFillValue,
 } from "../lib/simpleChart";
+import { toneChartColor } from "../lib/theme";
 import type { DailyPoint } from "../lib/types";
+import { ChartYAxisTick } from "./ChartYAxisTick";
 
 type Props = {
   daily: DailyPoint[];
+  mean: number;
   metric: string;
   unit: string;
 };
@@ -28,7 +32,7 @@ type ChartPoint = DailyPoint & {
   shadedBelow: number;
 };
 
-export function SimpleChart({ daily, metric, unit }: Props) {
+export function SimpleChart({ daily, mean, metric, unit }: Props) {
   const colors = useChartColors();
   const who = who24h(metric);
   const points = daily.filter((point) => point.n > 0);
@@ -37,12 +41,17 @@ export function SimpleChart({ daily, metric, unit }: Props) {
     shadedMean: thresholdFillValue(point.mean, who),
     shadedBelow: belowThresholdFillValue(point.mean, who),
   }));
-  const maxMean = Math.max(
-    1,
+  const periodMean = points.length > 0 ? mean : null;
+  const meanColor =
+    periodMean != null
+      ? toneChartColor(pmTone(periodMean, metric), colors)
+      : colors.poor;
+  const domainMax = chartYDomainMax(
     who ?? 0,
+    periodMean ?? 0,
     ...points.map((point) => point.mean),
   );
-  const domainMax = Math.ceil(maxMean * 1.15);
+  const yTicks = buildYAxisTicks(domainMax, [who, periodMean]);
   const hasThresholdExceedance =
     who != null && points.some((point) => point.mean > who);
   const hasThresholdCompliance =
@@ -102,10 +111,23 @@ export function SimpleChart({ daily, metric, unit }: Props) {
                 />
                 <YAxis
                   domain={[0, domainMax]}
-                  tick={tickStyle}
+                  ticks={yTicks}
+                  interval={0}
+                  tick={(props) => (
+                    <ChartYAxisTick
+                      {...props}
+                      who={who}
+                      mean={periodMean}
+                      whoColor={colors.good}
+                      meanColor={meanColor}
+                      muted={colors.textMuted}
+                      fontSize={tickStyle.fontSize}
+                      fontFamily={tickStyle.fontFamily}
+                    />
+                  )}
                   axisLine={false}
                   tickLine={false}
-                  width={46}
+                  width={52}
                   label={{
                     value: unit,
                     angle: -90,
@@ -154,13 +176,14 @@ export function SimpleChart({ daily, metric, unit }: Props) {
                     stroke={colors.good}
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
-                    label={{
-                      value: "javasolt szint",
-                      position: "insideTopRight",
-                      fill: colors.good,
-                      fontFamily: "IBM Plex Mono",
-                      fontSize: 12,
-                    }}
+                  />
+                ) : null}
+                {periodMean != null ? (
+                  <ReferenceLine
+                    y={periodMean}
+                    stroke={meanColor}
+                    strokeDasharray="2 6"
+                    strokeWidth={1.5}
                   />
                 ) : null}
                 <Line

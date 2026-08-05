@@ -9,6 +9,7 @@ const FALLBACK: ChartColors = {
   elevated: "#121c22",
   accent: "#7dffa8",
   good: "#7dffa8",
+  moderate: "#d6e56a",
   poor: "#ffb347",
   bad: "#ff5c4d",
   chartMean: "#5ec8ff",
