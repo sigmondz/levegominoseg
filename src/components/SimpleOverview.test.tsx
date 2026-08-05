@@ -22,6 +22,12 @@ describe("SimpleOverview", () => {
 
     expect(getByRole("heading", { name: "Jó" })).toBeInTheDocument();
     expect(getByText("Időszakos átlag")).toBeInTheDocument();
+    expect(getByText("WHO érték felett")).toBeInTheDocument();
+    expect(getByText("Maximum")).toBeInTheDocument();
+    expect(container.textContent).toContain(
+      `${summary.daysAboveWho}/${summary.daysTotal}`,
+    );
+    expect(container.textContent).toContain(String(summary.max));
     expect(container.textContent).toContain(
       "A PM2.5 időszakos átlaga jó a WHO 15 µg/m³ irányértékéhez képest.",
     );
@@ -40,9 +46,26 @@ describe("SimpleOverview", () => {
       mean: 10,
       valid: 10,
     };
-    const { container } = render(<SimpleOverview data={summary} />);
+    const { container, queryByText } = render(<SimpleOverview data={summary} />);
 
     expect(container.textContent).toContain("A kiválasztott időszakban");
+    expect(queryByText("WHO érték felett")).toBeNull();
+  });
+
+  test("egynapos időszaknál nem mutat WHO feletti naparányt, de maximumot igen", () => {
+    const summary = {
+      ...baseSummary,
+      daysTotal: 1,
+      daysAboveWho: 1,
+      mean: 20,
+      max: 88,
+      valid: 10,
+    };
+    const { getByText, queryByText } = render(<SimpleOverview data={summary} />);
+
+    expect(queryByText("WHO érték felett")).toBeNull();
+    expect(getByText("Maximum")).toBeInTheDocument();
+    expect(getByText("Időszakos átlag")).toBeInTheDocument();
   });
 
   test("PM10-nél a WHO 45-ös irányérték félkövér", () => {
