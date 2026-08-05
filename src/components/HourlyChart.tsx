@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
 import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
-import { thresholdFillValue } from "../lib/simpleChart";
+import { belowThresholdFillValue, thresholdFillValue } from "../lib/simpleChart";
 import type { HourlyPoint } from "../lib/types";
 import { InfoTip } from "./InfoTip";
 
@@ -25,6 +25,7 @@ type Props = {
 type ChartPoint = HourlyPoint & {
   label: string;
   shadedMean: number;
+  shadedBelow: number;
 };
 
 export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
@@ -34,9 +35,12 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
     ...point,
     label: `${String(point.hour).padStart(2, "0")}:00`,
     shadedMean: thresholdFillValue(point.mean, who),
+    shadedBelow: belowThresholdFillValue(point.mean, who),
   }));
   const hasThresholdExceedance =
     who != null && chartPoints.some((point) => point.mean > who);
+  const hasThresholdCompliance =
+    who != null && chartPoints.some((point) => point.mean < who);
   const domainMax = Math.max(
     GRAFANA_THRESHOLD,
     who ?? 0,
@@ -117,6 +121,18 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
                 ]}
                 labelFormatter={(label) => String(label)}
               />
+              {hasThresholdCompliance ? (
+                <Area
+                  type="monotone"
+                  dataKey="shadedBelow"
+                  baseValue={who ?? 0}
+                  fill={colors.good}
+                  fillOpacity={0.14}
+                  stroke="none"
+                  tooltipType="none"
+                  legendType="none"
+                />
+              ) : null}
               {hasThresholdExceedance ? (
                 <Area
                   type="monotone"
@@ -184,24 +200,44 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
               </div>
             </li>
             {who != null ? (
-              <li>
-                <span
-                  className="series-swatch series-swatch--band"
-                  style={{ background: colors.bad }}
-                  aria-hidden
-                />
-                <div className="label-with-tip">
-                  <strong>WHO feletti rész</strong>
-                  <InfoTip
-                    label="Mit jelöl a vörös satírozás?"
-                    tipId="hourly-who-shade-tip"
-                  >
-                    A vörös satírozás csak a WHO {who} µg/m³ irányérték vonala
-                    és az átlaggörbe közötti részt jelzi, ahol az óránkénti átlag
-                    a javasolt szint felett van.
-                  </InfoTip>
-                </div>
-              </li>
+              <>
+                <li>
+                  <span
+                    className="series-swatch series-swatch--band"
+                    style={{ background: colors.good }}
+                    aria-hidden
+                  />
+                  <div className="label-with-tip">
+                    <strong>WHO alatti rész</strong>
+                    <InfoTip
+                      label="Mit jelöl a zöld satírozás?"
+                      tipId="hourly-who-below-shade-tip"
+                    >
+                      A zöld satírozás csak a WHO {who} µg/m³ irányérték vonala
+                      és az átlaggörbe közötti részt jelzi, ahol az óránkénti
+                      átlag a javasolt szint alatt van.
+                    </InfoTip>
+                  </div>
+                </li>
+                <li>
+                  <span
+                    className="series-swatch series-swatch--band"
+                    style={{ background: colors.bad }}
+                    aria-hidden
+                  />
+                  <div className="label-with-tip">
+                    <strong>WHO feletti rész</strong>
+                    <InfoTip
+                      label="Mit jelöl a vörös satírozás?"
+                      tipId="hourly-who-shade-tip"
+                    >
+                      A vörös satírozás csak a WHO {who} µg/m³ irányérték vonala
+                      és az átlaggörbe közötti részt jelzi, ahol az óránkénti
+                      átlag a javasolt szint felett van.
+                    </InfoTip>
+                  </div>
+                </li>
+              </>
             ) : null}
           </ul>
         </div>

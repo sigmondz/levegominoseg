@@ -14,7 +14,7 @@ import { useChartColors } from "../hooks/useChartColors";
 import type { MaxWindow, SeriesEntry, TrendGrain, TrendPoint } from "../lib/types";
 import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
 import { downloadFilteredCsv } from "../lib/exportCsv";
-import { thresholdFillValue } from "../lib/simpleChart";
+import { thresholdFillValue, belowThresholdFillValue } from "../lib/simpleChart";
 import { IconActionButton } from "./IconActionButton";
 import { InfoTip } from "./InfoTip";
 import { ShareView } from "./ShareView";
@@ -301,9 +301,12 @@ export function DailyChart({
   const chartPoints = trend.map((point) => ({
     ...point,
     shadedMean: thresholdFillValue(point.mean, who),
+    shadedBelow: belowThresholdFillValue(point.mean, who),
   }));
   const hasThresholdExceedance =
     who != null && trend.some((point) => point.mean > who);
+  const hasThresholdCompliance =
+    who != null && trend.some((point) => point.mean < who);
 
   const tooltipStyle = {
     background: colors.elevated,
@@ -452,6 +455,19 @@ export function DailyChart({
                 ]}
                 labelFormatter={(label) => String(label)}
               />
+              {hasThresholdCompliance ? (
+                <Area
+                  type="monotone"
+                  dataKey="shadedBelow"
+                  baseValue={who ?? 0}
+                  fill={colors.good}
+                  fillOpacity={0.14}
+                  stroke="none"
+                  tooltipType="none"
+                  legendType="none"
+                  isAnimationActive={animate}
+                />
+              ) : null}
               {hasThresholdExceedance ? (
                 <Area
                   type="monotone"
@@ -551,24 +567,44 @@ export function DailyChart({
               </li>
             ) : null}
             {who != null ? (
-              <li>
-                <span
-                  className="series-swatch series-swatch--band"
-                  style={{ background: colors.bad }}
-                  aria-hidden
-                />
-                <div className="label-with-tip">
-                  <strong>WHO feletti rész</strong>
-                  <InfoTip
-                    label="Mit jelöl a vörös satírozás?"
-                    tipId="who-shade-tip"
-                  >
-                    A vörös satírozás csak a WHO {who} µg/m³ irányérték vonala
-                    és az átlaggörbe közötti részt jelzi, ahol az átlag a
-                    javasolt szint felett van.
-                  </InfoTip>
-                </div>
-              </li>
+              <>
+                <li>
+                  <span
+                    className="series-swatch series-swatch--band"
+                    style={{ background: colors.good }}
+                    aria-hidden
+                  />
+                  <div className="label-with-tip">
+                    <strong>WHO alatti rész</strong>
+                    <InfoTip
+                      label="Mit jelöl a zöld satírozás?"
+                      tipId="who-below-shade-tip"
+                    >
+                      A zöld satírozás csak a WHO {who} µg/m³ irányérték vonala
+                      és az átlaggörbe közötti részt jelzi, ahol az átlag a
+                      javasolt szint alatt van.
+                    </InfoTip>
+                  </div>
+                </li>
+                <li>
+                  <span
+                    className="series-swatch series-swatch--band"
+                    style={{ background: colors.bad }}
+                    aria-hidden
+                  />
+                  <div className="label-with-tip">
+                    <strong>WHO feletti rész</strong>
+                    <InfoTip
+                      label="Mit jelöl a vörös satírozás?"
+                      tipId="who-shade-tip"
+                    >
+                      A vörös satírozás csak a WHO {who} µg/m³ irányérték vonala
+                      és az átlaggörbe közötti részt jelzi, ahol az átlag a
+                      javasolt szint felett van.
+                    </InfoTip>
+                  </div>
+                </li>
+              </>
             ) : null}
           </ul>
         </div>

@@ -11,7 +11,10 @@ import {
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
 import { who24h } from "../lib/aqi";
-import { thresholdFillValue } from "../lib/simpleChart";
+import {
+  belowThresholdFillValue,
+  thresholdFillValue,
+} from "../lib/simpleChart";
 import type { DailyPoint } from "../lib/types";
 
 type Props = {
@@ -22,6 +25,7 @@ type Props = {
 
 type ChartPoint = DailyPoint & {
   shadedMean: number;
+  shadedBelow: number;
 };
 
 export function SimpleChart({ daily, metric, unit }: Props) {
@@ -31,6 +35,7 @@ export function SimpleChart({ daily, metric, unit }: Props) {
   const chartPoints: ChartPoint[] = points.map((point) => ({
     ...point,
     shadedMean: thresholdFillValue(point.mean, who),
+    shadedBelow: belowThresholdFillValue(point.mean, who),
   }));
   const maxMean = Math.max(
     1,
@@ -40,6 +45,8 @@ export function SimpleChart({ daily, metric, unit }: Props) {
   const domainMax = Math.ceil(maxMean * 1.15);
   const hasThresholdExceedance =
     who != null && points.some((point) => point.mean > who);
+  const hasThresholdCompliance =
+    who != null && points.some((point) => point.mean < who);
 
   const tooltipStyle = {
     background: colors.elevated,
@@ -115,6 +122,19 @@ export function SimpleChart({ daily, metric, unit }: Props) {
                   ]}
                   labelFormatter={(label) => String(label)}
                 />
+                {hasThresholdCompliance ? (
+                  <Area
+                    type="monotone"
+                    dataKey="shadedBelow"
+                    baseValue={who ?? 0}
+                    fill={colors.good}
+                    fillOpacity={0.14}
+                    stroke="none"
+                    tooltipType="none"
+                    legendType="none"
+                    isAnimationActive={points.length <= 180}
+                  />
+                ) : null}
                 {hasThresholdExceedance ? (
                   <Area
                     type="monotone"
@@ -123,19 +143,21 @@ export function SimpleChart({ daily, metric, unit }: Props) {
                     fill={colors.bad}
                     fillOpacity={0.14}
                     stroke="none"
+                    tooltipType="none"
+                    legendType="none"
                     isAnimationActive={points.length <= 180}
                   />
                 ) : null}
                 {who != null ? (
                   <ReferenceLine
                     y={who}
-                    stroke={colors.bad}
-                    strokeDasharray="5 5"
+                    stroke={colors.good}
+                    strokeDasharray="4 4"
                     strokeWidth={1.5}
                     label={{
                       value: "javasolt szint",
                       position: "insideTopRight",
-                      fill: colors.bad,
+                      fill: colors.good,
                       fontFamily: "IBM Plex Mono",
                       fontSize: 12,
                     }}
@@ -166,15 +188,26 @@ export function SimpleChart({ daily, metric, unit }: Props) {
             Napi átlag
           </span>
           {who != null ? (
-            <span className="simple-chart-key-item">
-              <span
-                className="simple-chart-key-band"
-                style={{ background: colors.bad }}
-                aria-hidden="true"
-              />
-              A vörös satírozás csak a WHO {who} {unit} vonala és az átlaggörbe
-              közötti részt jelzi.
-            </span>
+            <>
+              <span className="simple-chart-key-item">
+                <span
+                  className="simple-chart-key-band"
+                  style={{ background: colors.good }}
+                  aria-hidden="true"
+                />
+                A zöld satírozás a WHO {who} {unit} vonala és az átlaggörbe
+                közötti, küszöb alatti részt jelzi.
+              </span>
+              <span className="simple-chart-key-item">
+                <span
+                  className="simple-chart-key-band"
+                  style={{ background: colors.bad }}
+                  aria-hidden="true"
+                />
+                A vörös satírozás a WHO {who} {unit} vonala és az átlaggörbe
+                közötti, küszöb feletti részt jelzi.
+              </span>
+            </>
           ) : (
             <span className="simple-chart-key-note">
               Ehhez a mérőszámhoz nincs hivatalos WHO-irányérték, ezért nincs

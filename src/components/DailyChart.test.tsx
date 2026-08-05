@@ -47,10 +47,14 @@ describe("DailyChart", () => {
     expect(
       getByRole("button", { name: "Mi a WHO irányérték?" }),
     ).toBeInTheDocument();
+    expect(getByText("WHO alatti rész")).toBeInTheDocument();
+    expect(getByText("WHO feletti rész")).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Mit jelöl a zöld satírozás?" }),
+    ).toBeInTheDocument();
     expect(
       getByRole("button", { name: "Mit jelöl a vörös satírozás?" }),
     ).toBeInTheDocument();
-    expect(getByText("WHO feletti rész")).toBeInTheDocument();
     expect(
       getByRole("button", { name: "Mi a kiválasztott időszak átlaga?" }),
     ).toBeInTheDocument();
@@ -72,6 +76,7 @@ describe("DailyChart", () => {
       <DailyChart {...baseProps} metric="PM1" />,
     );
     expect(queryByText("WHO 24 órás irányérték")).toBeNull();
+    expect(queryByText("WHO alatti rész")).toBeNull();
     expect(queryByText("WHO feletti rész")).toBeNull();
     expect(
       queryByRole("button", { name: "Mit jelöl a vörös satírozás?" }),

@@ -28,6 +28,7 @@ describe("HourlyChart", () => {
     expect(document.querySelector(".recharts-responsive-container")).toBeTruthy();
     expect(document.querySelector(".recharts-line")).toBeTruthy();
     expect(getByText("Óránkénti átlag")).toBeInTheDocument();
+    expect(getByText("WHO alatti rész")).toBeInTheDocument();
     expect(getByText("WHO feletti rész")).toBeInTheDocument();
     expect(getByText("WHO 24 órás irányérték")).toBeInTheDocument();
     expect(getByText("15 µg/m³")).toBeInTheDocument();
@@ -36,6 +37,9 @@ describe("HourlyChart", () => {
     expect(getByText("80 µg/m³")).toBeInTheDocument();
     expect(
       getByRole("button", { name: "Mi az óránkénti átlag görbe?" }),
+    ).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Mit jelöl a zöld satírozás?" }),
     ).toBeInTheDocument();
     expect(
       getByRole("button", { name: "Mit jelöl a vörös satírozás?" }),
@@ -47,6 +51,7 @@ describe("HourlyChart", () => {
       <HourlyChart {...baseProps} metric="PM1" />,
     );
     expect(queryByText("WHO 24 órás irányérték")).toBeNull();
+    expect(queryByText("WHO alatti rész")).toBeNull();
     expect(queryByText("WHO feletti rész")).toBeNull();
     expect(queryByText("Magas szennyezettségi küszöb")).toBeInTheDocument();
   });

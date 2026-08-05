@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { render } from "@testing-library/react";
 import { TEST_DAILY } from "../test/fixtures";
-import { thresholdFillValue } from "../lib/simpleChart";
+import {
+  belowThresholdFillValue,
+  thresholdFillValue,
+} from "../lib/simpleChart";
 import { SimpleChart } from "./SimpleChart";
 
 const baseProps = {
@@ -11,7 +14,7 @@ const baseProps = {
 };
 
 describe("SimpleChart", () => {
-  test("egyetlen átlaggörbét és csak a WHO feletti részt satírozza", () => {
+  test("egyetlen átlaggörbét és a WHO alatti/feletti satírozást mutatja", () => {
     const { getByRole, getByText, queryByText } = render(
       <SimpleChart {...baseProps} />,
     );
@@ -21,11 +24,14 @@ describe("SimpleChart", () => {
     ).toBeInTheDocument();
     expect(getByText("Napi átlag")).toBeInTheDocument();
     expect(
-      getByText(/A vörös satírozás csak a WHO 15 µg\/m³ vonala és az átlaggörbe/),
+      getByText(/A zöld satírozás a WHO 15 µg\/m³ vonala és az átlaggörbe/),
+    ).toBeInTheDocument();
+    expect(
+      getByText(/A vörös satírozás a WHO 15 µg\/m³ vonala és az átlaggörbe/),
     ).toBeInTheDocument();
     expect(queryByText("Max görbe")).toBeNull();
     expect(document.querySelector(".recharts-responsive-container")).toBeTruthy();
-    expect(document.querySelectorAll(".recharts-area-area")).toHaveLength(1);
+    expect(document.querySelectorAll(".recharts-area-area").length).toBeGreaterThanOrEqual(1);
     expect(document.querySelectorAll(".recharts-line-curve")).toHaveLength(1);
   });
 
@@ -47,6 +53,9 @@ describe("SimpleChart", () => {
     expect(thresholdFillValue(10, 15)).toBe(15);
     expect(thresholdFillValue(25, 15)).toBe(25);
     expect(thresholdFillValue(25, null)).toBe(0);
+    expect(belowThresholdFillValue(10, 15)).toBe(10);
+    expect(belowThresholdFillValue(25, 15)).toBe(15);
+    expect(belowThresholdFillValue(25, null)).toBe(0);
   });
 
   test("üres időszaknál jelzi, hogy nincs adat", () => {
