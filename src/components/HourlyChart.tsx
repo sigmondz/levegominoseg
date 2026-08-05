@@ -10,7 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { useChartColors } from "../hooks/useChartColors";
-import { GRAFANA_THRESHOLD, pmTone, who24h } from "../lib/aqi";
+import { pmTone, who24h } from "../lib/aqi";
 import { buildYAxisTicks, chartYDomainMax, whoReferenceLabel } from "../lib/chartAxis";
 import {
   CHART_ANIMATION_DURATION_MS,
@@ -42,7 +42,6 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
   const hasThresholdCompliance =
     who != null && labeled.some((point) => point.mean < who);
   const domainMax = chartYDomainMax(
-    GRAFANA_THRESHOLD,
     who ?? 0,
     mean,
     ...labeled.map((point) => point.mean),
@@ -198,12 +197,6 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
                 strokeDasharray="2 6"
                 strokeWidth={1.5}
               />
-              <ReferenceLine
-                y={GRAFANA_THRESHOLD}
-                stroke={colors.bad}
-                strokeDasharray="4 4"
-                strokeWidth={1.5}
-              />
               <Line
                 type="monotone"
                 dataKey="mean"
@@ -338,32 +331,6 @@ export function HourlyChart({ hourly, mean, metric, intervalMin }: Props) {
                   className={`threshold-legend-value tone-${pmTone(mean, metric)}`}
                 >
                   {mean.toFixed(1)} µg/m³
-                </span>
-              </div>
-            </li>
-            <li>
-              <span
-                className="threshold-line threshold-line--alert"
-                style={{ borderTopColor: colors.bad }}
-                aria-hidden
-              />
-              <div className="threshold-legend-item">
-                <div className="label-with-tip">
-                  <strong>Magas szennyezettségi küszöb</strong>
-                  <InfoTip
-                    label="Mi a magas szennyezettségi küszöb?"
-                    tipId="hourly-alert-threshold-tip"
-                  >
-                    Efelett a levegő erősen szennyezettnek számít ezen az
-                    oldalon. Nem hivatalos határ, hanem helyi riasztási szint
-                    {who != null
-                      ? " — többszöröse a WHO irányértéknek"
-                      : ""}
-                    . A grafikonon a piros szaggatott vonal jelöli.
-                  </InfoTip>
-                </div>
-                <span className="threshold-legend-value tone-bad">
-                  {GRAFANA_THRESHOLD} µg/m³
                 </span>
               </div>
             </li>

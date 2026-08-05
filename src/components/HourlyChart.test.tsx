@@ -22,7 +22,9 @@ const baseProps = {
 
 describe("HourlyChart", () => {
   test("grafikon, görbe- és határérték-jelmagyarázat megjelenik", () => {
-    const { getByText, getByRole } = render(<HourlyChart {...baseProps} />);
+    const { getByText, getByRole, queryByText } = render(
+      <HourlyChart {...baseProps} />,
+    );
 
     expect(getByText("Óránkénti profil")).toBeInTheDocument();
     expect(document.querySelector(".recharts-responsive-container")).toBeTruthy();
@@ -33,8 +35,8 @@ describe("HourlyChart", () => {
     expect(getByText("WHO 24 órás irányérték")).toBeInTheDocument();
     expect(getByText("15 µg/m³")).toBeInTheDocument();
     expect(getByText("Kiválasztott időszak átlaga")).toBeInTheDocument();
-    expect(getByText("Magas szennyezettségi küszöb")).toBeInTheDocument();
-    expect(getByText("80 µg/m³")).toBeInTheDocument();
+    expect(queryByText("Magas szennyezettségi küszöb")).toBeNull();
+    expect(queryByText("80 µg/m³")).toBeNull();
     expect(
       getByRole("button", { name: "Mi az óránkénti átlag görbe?" }),
     ).toBeInTheDocument();
@@ -53,7 +55,7 @@ describe("HourlyChart", () => {
     expect(queryByText("WHO 24 órás irányérték")).toBeNull();
     expect(queryByText("WHO alatti rész")).toBeNull();
     expect(queryByText("WHO feletti rész")).toBeNull();
-    expect(queryByText("Magas szennyezettségi küszöb")).toBeInTheDocument();
+    expect(queryByText("Magas szennyezettségi küszöb")).toBeNull();
   });
 
   test("üres adat esetén üzenet", () => {
