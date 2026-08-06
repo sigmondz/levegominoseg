@@ -1,5 +1,7 @@
 import {
+  defaultDay,
   defaultParentKey,
+  defaultWindow,
   effectivePeriodBounds,
   listDaysInPeriod,
   listMonthsInParent,
@@ -119,20 +121,6 @@ export function viewBounds(
     dataFromMs,
     dataToMs,
   );
-}
-
-function defaultDay(bounds: PeriodRange, dataToMs: number): string {
-  const days = listDaysInPeriod(bounds);
-  return days.at(-1)?.id ?? toDateInputValue(dataToMs);
-}
-
-function defaultWindow(
-  bounds: PeriodRange,
-  dataFromMs: number,
-  length: 7 | 14,
-): string {
-  const windows = listWindowsInPeriod(bounds, length);
-  return windows.at(-1)?.id ?? toDateInputValue(dataFromMs);
 }
 
 export function parentFromMonthKey(monthKey: MonthKey): ParentPeriodKey {
