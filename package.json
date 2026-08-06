@@ -12,6 +12,7 @@
     "lint": "oxlint",
     "test": "bun test --concurrency=1",
     "test:watch": "bun test --watch --concurrency 1",
+    "test:react-doctor": "react-doctor . --yes --no-score --blocking error",
     "deploy": "bun run build && npx wrangler pages deploy dist --project-name=levegominoseg --commit-dirty=true"
   },
   "dependencies": {
@@ -29,6 +30,7 @@
     "@types/react-dom": "^19.2.3",
     "happy-dom": "^20.11.1",
     "oxlint": "^1.75.0",
+    "react-doctor": "^0.9.5",
     "typescript": "^7"
   }
 }

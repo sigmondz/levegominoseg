@@ -1,35 +1,58 @@
 # Levegő
 
-React + TypeScript megjelenítő a helyi **PM1 / PM2.5 / PM10** (SPS30) mérésekhez.
-Teljes **Bun** stack: runtime, package manager, bundler, dev server (`Bun.serve`).
+Helyi **PM1 / PM2.5 / PM10** levegőminőség-megjelenítő Nagymarosról (SPS30 szenzor). A mérések Grafana CSV exportból származnak; a böngészőben idősorok, napi/órás aggregátumok és WHO irányérték-összehasonlítás jelenik meg.
 
-## Adatok
+Fejlesztői / tech stack részletek: [DEVELOPMENT.md](./DEVELOPMENT.md).
 
-- `public/data/pm1-sps30-2026.csv` — Grafana CSV export, SPS30 PM1 (2026. január–július)
-- `public/data/pm25-sps30-2026.csv` — Grafana CSV export, SPS30 PM2.5 (2026. január–július)
-- `public/data/pm10-sps30-2026.csv` — Grafana CSV export, SPS30 PM10 (2026. január–július)
-- `public/data/series-pm1.json` / `series-pm25.json` / `series-pm10.json` — nyers idősorszűréshez
-- `public/data/series.json` — PM2.5 alias (visszafelé kompatibilitás)
-- `public/data/summary.json` — előaggregált statisztikák (PM2.5)
-- `public/data/grafana-pm-sensors-dashboard.json` — eredeti Grafana dashboard export
+## Mit csinál
 
-Az augusztusi napok a generált series fájlokból ki vannak hagyva (még kevés adat).
+- Metrika választás: PM1, PM2.5, PM10
+- Időszak szűrés (negyedév / félév, hónap, 1–14 nap, egyéni tartomány)
+- Egyszerű és részletes nézet (statisztikák, legrosszabb napok, chartok)
+- Megosztható URL (a nézetállapot a query stringben van)
+- Világos / sötét téma
 
-## Futtatás
+## Gyors start
 
 ```bash
 bun install
 bun dev
 ```
 
-Production (Bun szerver):
+A dev szerver alapból a [http://localhost:3000](http://localhost:3000) címen indul (`PORT` környezeti változóval állítható).
+
+További parancsok:
 
 ```bash
-bun start
+bun test          # tesztek
+bun run test:react-doctor  # React Doctor (lokális)
+bun run build     # statikus build → dist/
+bun start         # production Bun szerver
+bun run deploy    # build + Cloudflare Pages
 ```
 
-Statikus build (`dist/`):
+## Adatok
+
+A nyers és előkészített fájlok a `public/data/` mappában vannak:
+
+| Fájl | Tartalom |
+| --- | --- |
+| `pm{1,25,10}-sps30-2026.csv` | Grafana CSV export (SPS30) |
+| `series-pm{1,25,10}.json` | Idősor a UI-hoz (`[timestampMs, value]`) |
+| `series.json` | PM2.5 alias (visszafelé kompatibilitás) |
+| `summary.json` | Előaggregált PM2.5 statisztikák |
+| `grafana-pm-sensors-dashboard.json` | Eredeti Grafana dashboard export |
+
+Új CSV után a series fájlok újragenerálása:
 
 ```bash
-bun run build
+python3 scripts/generate_pm25_data.py
 ```
+
+A hiányos hónapok (jelenleg 2026. augusztus) ki vannak hagyva a generált series-ből, amíg nincs elég adat.
+
+## Stack röviden
+
+Teljes **Bun** toolchain (runtime, package manager, bundler, `Bun.serve` + HMR), **React 19**, **TypeScript**, **Recharts**, plain CSS. Production: Cloudflare Pages (`dist/`).
+
+Részletek, mappa-struktúra, tesztelés és deploy: [DEVELOPMENT.md](./DEVELOPMENT.md).
