@@ -27,6 +27,17 @@ export function applyTheme(theme: Theme): void {
   }
   meta.setAttribute("content", theme);
 
+  let themeColor = document.querySelector('meta[name="theme-color"]');
+  if (!themeColor) {
+    themeColor = document.createElement("meta");
+    themeColor.setAttribute("name", "theme-color");
+    document.head.appendChild(themeColor);
+  }
+  themeColor.setAttribute(
+    "content",
+    theme === "light" ? "#e9f0f2" : "#0b1216",
+  );
+
   try {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
   } catch {

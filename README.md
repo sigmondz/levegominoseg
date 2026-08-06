@@ -11,6 +11,7 @@ Fejlesztői / tech stack részletek: [DEVELOPMENT.md](./DEVELOPMENT.md).
 - Egyszerű és részletes nézet (statisztikák, legrosszabb napok, chartok)
 - Megosztható URL (a nézetállapot a query stringben van)
 - Világos / sötét téma
+- PWA: telepíthető alkalmazásként (manifest + service worker)
 
 ## Gyors start
 

@@ -15,6 +15,7 @@ Fejlesztői dokumentáció a **Levegő** (levegőminőség-megjelenítő) projek
 | Teszt | **bun:test** + Testing Library + happy-dom | `bunfig.toml` preload |
 | Adatgenerálás | **Python 3** | Grafana CSV → JSON |
 | Hosting | **Cloudflare Pages** | `wrangler pages deploy` |
+| PWA | Web App Manifest + service worker | `public/manifest.webmanifest`, `public/sw.js`, ikonok |
 
 Nincs Next.js, Vite, Node.js szerver, adatbázis vagy backend API — a frontend statikus JSON fájlokat olvas a `public/data/` alól.
 
@@ -50,25 +51,27 @@ Környezeti változók:
 ## Architektúra
 
 ```
-src/index.ts          Bun.serve — SPA + /data/:file
-src/index.html        HTML shell, theme FOUC-gátló script, fontok
-src/frontend.tsx      React mount (#root)
+src/index.ts          Bun.serve — SPA + /data/:file + PWA assetek
+src/index.html        HTML shell, theme FOUC-gátló script, fontok, PWA meta
+src/frontend.tsx      React mount (#root) + SW regisztráció (prod)
 src/App.tsx           Nézetállapot, adatbetöltés, filterek, chart orchestration
 src/components/       UI (Hero, filterek, Stats, chartok, …)
 src/hooks/            useTheme, useChartColors
 src/lib/              Domain logika (aggregate, aqi, urlState, types, …)
 src/styles/           CSS modulok (tokens → layout → szekciók)
 src/test/             Teszt setup + fixture-ök
-public/data/          Statikus CSV / JSON adat
+public/               Statikus assetek (data, ikonok, manifest, SW, _headers)
 scripts/              Offline adatgenerálás (Python)
 ```
 
 ### Szerver (`src/index.ts`)
 
 - `Bun.serve` route-ok:
+  - `/manifest.webmanifest`, `/sw.js`, `/icons/:file`, favicon — `public/` PWA / statikus fájlok
   - `/data/:file` — fájl a `public/data/`-ból (path traversal védelem)
   - `/*` — SPA (`index.html` HTML bundler entry)
 - Dev: HMR + console; prod: statikus szerver ugyanazzal a kóddal, vagy Cloudflare Pages a `dist/`-ről
+- PWA: production buildben a `registerServiceWorker` regisztrálja a `/sw.js`-t; a SW app shellt cache-el, a `/data/` hálózat-először stratégiát használ
 
 ### Frontend adatfolyam
 

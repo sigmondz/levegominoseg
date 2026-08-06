@@ -8,6 +8,11 @@
       name="description"
       content="Levegőminőség Nagymaroson — helyi PM2.5 mérések megjelenítése SPS30 szenzorból."
     />
+    <meta name="theme-color" content="#0b1216" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Levegő" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -28,10 +33,29 @@
           root.style.colorScheme = theme;
           var meta = document.querySelector('meta[name="color-scheme"]');
           if (meta) meta.setAttribute("content", theme);
+          var themeColor = document.querySelector('meta[name="theme-color"]');
+          if (themeColor) {
+            themeColor.setAttribute(
+              "content",
+              theme === "light" ? "#e9f0f2" : "#0b1216",
+            );
+          }
         } catch (e) {
           document.documentElement.setAttribute("data-theme", "dark");
           document.documentElement.style.colorScheme = "dark";
         }
+
+        // Absolute /public paths — Bun HTML bundler would try to resolve them if
+        // written as static <link href="/..."> attributes.
+        var manifest = document.createElement("link");
+        manifest.rel = "manifest";
+        manifest.href = "/manifest.webmanifest";
+        document.head.appendChild(manifest);
+
+        var apple = document.createElement("link");
+        apple.rel = "apple-touch-icon";
+        apple.href = "/icons/apple-touch-icon.png";
+        document.head.appendChild(apple);
       })();
     </script>
   </head>
