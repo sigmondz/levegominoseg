@@ -30,8 +30,8 @@ export function UploadPage() {
       setImportedId(payload.site?.id ?? id);
       setMessage(
         payload.site
-          ? `${payload.site.label} mentve (${payload.site.metrics.join(", ")}). Ellenőrizd a főoldalon, majd commitold a public/data fájlokat.`
-          : "Mentve.",
+          ? `${payload.site.label} elmentve (${payload.site.metrics.join(", ")}). Nézd meg a főoldalon, és ha stimmel, commitold a public/data fájlokat.`
+          : "A helyszín elmentve.",
       );
     } catch (error) {
       setStatus("error");
@@ -41,12 +41,14 @@ export function UploadPage() {
 
   return (
     <div className="app upload-page">
-      <header className="hero">
-        <h1 className="hero-brand">Helyszín import</h1>
-        <p className="section-desc">
-          Grafana CSV → JSON a helyi <code>public/data</code> mappába. Csak{" "}
-          <code>bun dev</code> alatt. Utána commit és <code>bun run deploy</code>
-          .
+      <header className="upload-header">
+        <h1 className="upload-title">Helyszín import</h1>
+        <p className="upload-lead">
+          Itt Grafana CSV-ből készíthetsz új helyszín-adatot. A fájlok a gépeden
+          a <code>public/data</code> mappába kerülnek; ez az űrlap csak a helyi
+          fejlesztői szerveren (<code>bun dev</code>) működik. Ha a főoldalon
+          jónak látod az eredményt, commitold a változást, és tedd ki az oldalt
+          a <code>bun run deploy</code> paranccsal.
         </p>
       </header>
       <form className="upload-form" onSubmit={onSubmit}>

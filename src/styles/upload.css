@@ -4,6 +4,36 @@
   padding-bottom: var(--space-xl);
 }
 
+.upload-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-xl) clamp(1.25rem, 4vw, 2.5rem) var(--space-md);
+}
+
+.upload-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2rem, 8vw, 2.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.upload-lead {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.upload-lead code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
 .upload-form {
   display: flex;
   flex-direction: column;
