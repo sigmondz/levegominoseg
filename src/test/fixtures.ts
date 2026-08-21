@@ -1,4 +1,10 @@
-import type { DailyPoint, DatasetMeta, SeriesEntry, SeriesFile } from "../lib/types";
+import type {
+  DailyPoint,
+  DatasetMeta,
+  SeriesEntry,
+  SeriesFile,
+  SiteInfo,
+} from "../lib/types";
 
 const INTERVAL_MS = 3 * 60 * 1000;
 
@@ -36,6 +42,42 @@ export const TEST_POINTS = makeTestPoints();
 export const TEST_SERIES: SeriesFile = {
   meta: TEST_META,
   points: TEST_POINTS,
+};
+
+export const TEST_SITE_HAZ: SiteInfo = {
+  id: "nagymaros-haz01",
+  label: "Ház 01",
+  sensor: "SPS30",
+  chipId: "test-chip",
+  metrics: ["PM1", "PM2.5", "PM10"],
+  fromMs: TEST_FROM_MS,
+  toMs: TEST_TO_MS,
+  files: {
+    PM1: "/data/series-pm1.json",
+    "PM2.5": "/data/series-pm25.json",
+    PM10: "/data/series-pm10.json",
+  },
+  sourceCsv: {
+    PM1: "/data/pm1-sps30-2026.csv",
+    "PM2.5": "/data/pm25-sps30-2026.csv",
+    PM10: "/data/pm10-sps30-2026.csv",
+  },
+};
+
+export const TEST_SITE_ISKOLA: SiteInfo = {
+  id: "nagymaros-iskola01",
+  label: "Iskola 01",
+  sensor: "SPS30",
+  metrics: ["PM2.5"],
+  fromMs: TEST_FROM_MS,
+  toMs: TEST_TO_MS,
+  files: {
+    "PM2.5": "/data/nagymaros-iskola01-pm25.json",
+  },
+};
+
+export const TEST_CATALOG = {
+  sites: [TEST_SITE_HAZ, TEST_SITE_ISKOLA],
 };
 
 export const TEST_DAILY: DailyPoint[] = [

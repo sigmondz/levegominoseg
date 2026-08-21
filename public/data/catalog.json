@@ -1,0 +1,23 @@
+{
+  "sites": [
+    {
+      "id": "nagymaros-haz01",
+      "label": "Ház 01",
+      "sensor": "SPS30",
+      "chipId": "esp8266-2702201",
+      "metrics": ["PM1", "PM2.5", "PM10"],
+      "fromMs": 1767222360000,
+      "toMs": 1785535020000,
+      "files": {
+        "PM1": "/data/series-pm1.json",
+        "PM2.5": "/data/series-pm25.json",
+        "PM10": "/data/series-pm10.json"
+      },
+      "sourceCsv": {
+        "PM1": "/data/pm1-sps30-2026.csv",
+        "PM2.5": "/data/pm25-sps30-2026.csv",
+        "PM10": "/data/pm10-sps30-2026.csv"
+      }
+    }
+  ]
+}

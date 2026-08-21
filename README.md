@@ -7,6 +7,7 @@ Fejlesztői / tech stack részletek: [DEVELOPMENT.md](./DEVELOPMENT.md).
 ## Mit csinál
 
 - Metrika választás: PM1, PM2.5, PM10
+- Helyszín választás (pl. Ház 01, később iskola / óvoda)
 - Időszak szűrés (negyedév / félév, hónap, 1–14 nap, egyéni tartomány)
 - Egyszerű és részletes nézet (statisztikák, legrosszabb napok, chartok)
 - Megosztható URL (a nézetállapot a query stringben van)
@@ -38,19 +39,19 @@ A nyers és előkészített fájlok a `public/data/` mappában vannak:
 
 | Fájl | Tartalom |
 | --- | --- |
-| `pm{1,25,10}-sps30-2026.csv` | Grafana CSV export (SPS30) |
+| `catalog.json` | Helyszínlista a dropdownhoz |
+| `pm{1,25,10}-sps30-2026.csv` | Grafana CSV export (SPS30, Ház 01) |
 | `series-pm{1,25,10}.json` | Idősor a UI-hoz (`[timestampMs, value]`) |
 | `series.json` | PM2.5 alias (visszafelé kompatibilitás) |
 | `summary.json` | Előaggregált PM2.5 statisztikák |
 | `grafana-pm-sensors-dashboard.json` | Eredeti Grafana dashboard export |
 
-Új CSV után a series fájlok újragenerálása:
+Új CSV után:
 
-```bash
-python3 scripts/generate_pm25_data.py
-```
+- **Ház 01** (`nagymaros-haz01`) series újragenerálása: `python3 scripts/generate_pm25_data.py` (a hiányos hónapok, jelenleg 2026. augusztus, ki vannak hagyva).
+- **További helyszín:** `bun run import-site -- --id nagymaros-iskola01 --label "Iskola 01" pm25.csv` — lapos JSON + `catalog.json`. Utána commit a `public/data/`-ra és `bun run deploy`.
 
-A hiányos hónapok (jelenleg 2026. augusztus) ki vannak hagyva a generált series-ből, amíg nincs elég adat.
+Az `import-site` nem szűr hónapot. Helyi UI (csak `bun dev`): [http://localhost:3000/feltoltes](http://localhost:3000/feltoltes).
 
 ## Stack röviden
 

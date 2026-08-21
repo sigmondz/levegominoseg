@@ -2,12 +2,16 @@ import { describe, expect, mock, test, beforeEach, afterEach } from "bun:test";
 import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
-import { TEST_SERIES } from "./test/fixtures";
+import { TEST_CATALOG, TEST_SERIES } from "./test/fixtures";
 
 function metricFromSeriesUrl(url: string): string {
-  if (url.includes("series-pm10")) return "PM10";
-  if (url.includes("series-pm1")) return "PM1";
+  if (url.includes("series-pm10") || url.includes("-pm10.json")) return "PM10";
+  if (url.includes("series-pm1") || url.includes("-pm1.json")) return "PM1";
   return "PM2.5";
+}
+
+function isCatalogUrl(url: string): boolean {
+  return url.includes("/data/catalog.json");
 }
 
 function isSeriesUrl(url: string): boolean {
@@ -15,7 +19,8 @@ function isSeriesUrl(url: string): boolean {
     url.includes("/data/series-pm25.json") ||
     url.includes("/data/series-pm1.json") ||
     url.includes("/data/series-pm10.json") ||
-    url.includes("/data/series.json")
+    url.includes("/data/series.json") ||
+    url.includes("/data/nagymaros-iskola01-pm25.json")
   );
 }
 
@@ -30,8 +35,13 @@ describe("App", () => {
     window.localStorage.clear();
     globalThis.fetch = mock(async (input: RequestInfo | URL) => {
       const url = String(input);
+      if (isCatalogUrl(url)) {
+        return new Response(JSON.stringify(TEST_CATALOG), { status: 200 });
+      }
       if (isSeriesUrl(url)) {
         const metric = metricFromSeriesUrl(url);
+        const key = `${url}::${metric}`;
+        seriesFetchCount.set(key, (seriesFetchCount.get(key) ?? 0) + 1);
         seriesFetchCount.set(metric, (seriesFetchCount.get(metric) ?? 0) + 1);
         return new Response(
           JSON.stringify({
@@ -50,10 +60,13 @@ describe("App", () => {
   });
 
   test("betölti az adatokat és megjeleníti a fő elemeket", async () => {
-    const { getByText, findByText } = render(<App />);
+    const { getByText, findByText, findByRole } = render(<App />);
 
     expect(await findByText("Levegőminőség Nagymaroson")).toBeInTheDocument();
     expect(getByText("Adatsor")).toBeInTheDocument();
+    expect(await findByRole("combobox", { name: "Helyszín" })).toHaveValue(
+      "nagymaros-haz01",
+    );
     expect(getByText("A kiválasztott időszak összképe")).toBeInTheDocument();
     expect(document.querySelector(".filter-bar > .period-lead")).toBeNull();
 
@@ -147,6 +160,27 @@ describe("App", () => {
     });
     expect(seriesFetchCount.get("PM2.5")).toBe(1);
     expect(seriesFetchCount.get("PM10")).toBe(1);
+  });
+
+  test("helyszínváltáskor a hiányzó PM chip eltűnik", async () => {
+    const user = userEvent.setup();
+    const { findByRole, findByText, queryByRole } = render(<App />);
+
+    await findByText("Levegőminőség Nagymaroson");
+    const select = await findByRole("combobox", { name: "Helyszín" });
+    await user.selectOptions(select, "nagymaros-iskola01");
+
+    await waitFor(() => {
+      expect(window.location.search).toContain("s=nagymaros-iskola01");
+    });
+    expect(await findByRole("button", { name: "PM2.5" })).toBeInTheDocument();
+    expect(queryByRole("button", { name: "PM1" })).toBeNull();
+    expect(queryByRole("button", { name: "PM10" })).toBeNull();
+    await waitFor(() => {
+      expect(
+        seriesFetchCount.get("/data/nagymaros-iskola01-pm25.json::PM2.5"),
+      ).toBe(1);
+    });
   });
 
   test("téma váltó gomb működik", async () => {

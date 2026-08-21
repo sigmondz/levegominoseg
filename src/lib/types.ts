@@ -22,6 +22,21 @@ export type TrendPoint = {
 /** Selectable pollutant series */
 export type MetricId = "PM1" | "PM2.5" | "PM10";
 
+/** Nagymaros measurement site, e.g. nagymaros-haz01 */
+export type SiteId = string;
+
+export type SiteInfo = {
+  id: SiteId;
+  label: string;
+  sensor: string;
+  chipId?: string;
+  metrics: MetricId[];
+  fromMs: number;
+  toMs: number;
+  files: Partial<Record<MetricId, string>>;
+  sourceCsv?: Partial<Record<MetricId, string>>;
+};
+
 export type DatasetMeta = {
   sensor: string;
   metric: string;

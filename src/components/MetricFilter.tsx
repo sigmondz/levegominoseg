@@ -1,13 +1,28 @@
 import { METRIC_OPTIONS } from "../lib/aqi";
-import type { MetricId } from "../lib/types";
+import type { MetricId, SiteInfo } from "../lib/types";
 import { InfoTip } from "./InfoTip";
 
 type Props = {
+  sites: SiteInfo[];
+  siteId: string;
+  onSiteChange: (siteId: string) => void;
   metric: MetricId;
+  availableMetrics: MetricId[];
   onMetricChange: (metric: MetricId) => void;
 };
 
-export function MetricFilter({ metric, onMetricChange }: Props) {
+export function MetricFilter({
+  sites,
+  siteId,
+  onSiteChange,
+  metric,
+  availableMetrics,
+  onMetricChange,
+}: Props) {
+  const visibleMetrics = METRIC_OPTIONS.filter((item) =>
+    availableMetrics.includes(item.id),
+  );
+
   return (
     <section
       className="section period period--compact"
@@ -25,8 +40,23 @@ export function MetricFilter({ metric, onMetricChange }: Props) {
           mélyebbre jut a légutakba.
         </InfoTip>
       </div>
-      <div className="period-chips" role="group" aria-label="Adatsor">
-        {METRIC_OPTIONS.map((item) => (
+      <label className="site-select-label">
+        <span className="site-select-caption">Helyszín</span>
+        <select
+          className="site-select"
+          value={siteId}
+          aria-label="Helyszín"
+          onChange={(event) => onSiteChange(event.target.value)}
+        >
+          {sites.map((site) => (
+            <option key={site.id} value={site.id}>
+              {site.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="period-chips" role="group" aria-label="Mutató">
+        {visibleMetrics.map((item) => (
           <button
             key={item.id}
             type="button"

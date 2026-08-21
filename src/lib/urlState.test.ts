@@ -27,6 +27,7 @@ describe("urlState", () => {
     expect(view.maxWindow).toBe("hour");
     expect(view.metric).toBe("PM2.5");
     expect(view.viewMode).toBe("simple");
+    expect(view.siteId).toBe("nagymaros-haz01");
   });
 
   test("parseViewState hónapnézet max ablak nem 3m", () => {
@@ -76,6 +77,25 @@ describe("urlState", () => {
 
     const invalid = parseViewState("?metric=pm99", TEST_META, defaults);
     expect(invalid.metric).toBe("PM2.5");
+  });
+
+  test("parseViewState helyszín paraméter", () => {
+    const ids = ["nagymaros-haz01", "nagymaros-iskola01"];
+    const view = parseViewState(
+      "?s=nagymaros-iskola01",
+      TEST_META,
+      defaults,
+      ids,
+    );
+    expect(view.siteId).toBe("nagymaros-iskola01");
+
+    const unknown = parseViewState(
+      "?s=nagymaros-nincs",
+      TEST_META,
+      defaults,
+      ids,
+    );
+    expect(unknown.siteId).toBe("nagymaros-haz01");
   });
 
   test("parseViewState egyszerű nézet paraméter", () => {
@@ -140,6 +160,14 @@ describe("urlState", () => {
     expect(built.get("d")).toBe("2026-02-01");
     expect(built.get("g")).toBe("hour");
     expect(built.get("m")).toBe("15m");
+
+    const otherSite = {
+      ...defaults,
+      siteId: "nagymaros-iskola01",
+    };
+    expect(buildSearchParams(otherSite, defaults).get("s")).toBe(
+      "nagymaros-iskola01",
+    );
 
     const simpleCustom = {
       ...defaults,

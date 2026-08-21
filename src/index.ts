@@ -1,5 +1,7 @@
 import { serve } from "bun";
+import { fileURLToPath } from "node:url";
 import index from "./index.html";
+import { ImportSiteError, importSite } from "./lib/importSite";
 
 function publicFile(relativePath: string) {
   return Bun.file(new URL(`../public/${relativePath}`, import.meta.url));
@@ -51,6 +53,31 @@ async function servePublic(relativePath: string): Promise<Response> {
 
 const isProd = process.env.NODE_ENV === "production";
 const preferredPort = Number(process.env.PORT) || 3000;
+const dataDir = fileURLToPath(new URL("../public/data", import.meta.url));
+
+async function handleSiteImport(req: Request): Promise<Response> {
+  if (isProd || req.method !== "POST") {
+    return new Response("Not found", { status: 404 });
+  }
+
+  try {
+    const form = await req.formData();
+    const id = String(form.get("id") ?? "");
+    const label = String(form.get("label") ?? "");
+    const csvs: { name: string; text: string }[] = [];
+    for (const entry of form.getAll("files")) {
+      if (typeof entry === "string") continue;
+      csvs.push({ name: entry.name || "upload.csv", text: await entry.text() });
+    }
+    const site = await importSite({ dataDir, id, label, csvs });
+    return Response.json({ site });
+  } catch (error) {
+    const message =
+      error instanceof ImportSiteError ? error.message : "Import hiba";
+    const status = error instanceof ImportSiteError ? 400 : 500;
+    return Response.json({ error: message }, { status });
+  }
+}
 
 function start(port: number) {
   try {
@@ -90,6 +117,7 @@ function start(port: number) {
             },
           });
         },
+        "/api/sites": (req) => handleSiteImport(req),
 
         "/*": index,
       },

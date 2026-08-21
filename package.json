@@ -13,6 +13,7 @@
     "test": "bun test --concurrency=1",
     "test:watch": "bun test --watch --concurrency 1",
     "test:react-doctor": "react-doctor . --yes --no-score --blocking error",
+    "import-site": "bun scripts/import-site.ts",
     "deploy": "bun run build && npx wrangler pages deploy dist --project-name=levegominoseg --commit-dirty=true"
   },
   "dependencies": {

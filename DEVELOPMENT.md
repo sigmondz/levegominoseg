@@ -41,6 +41,7 @@ bun install
 | `bun test:watch` | Watch mód |
 | `bun run test:react-doctor` | React Doctor audit (error szintnél bukik) |
 | `bun run deploy` | Build + Cloudflare Pages deploy (`levegominoseg`) |
+| `bun run import-site` | Grafana CSV → helyszín JSON + `catalog.json` |
 
 Környezeti változók:
 
@@ -51,17 +52,16 @@ Környezeti változók:
 ## Architektúra
 
 ```
-src/index.ts          Bun.serve — SPA + /data/:file + PWA assetek
+src/index.ts          Bun.serve — SPA + /data/:file + dev POST /api/sites
 src/index.html        HTML shell, theme FOUC-gátló script, fontok, PWA meta
-src/frontend.tsx      React mount (#root) + SW regisztráció (prod)
+src/frontend.tsx      React mount (#root) + SW regisztráció (prod); /feltoltes csak dev
 src/App.tsx           Nézetállapot, adatbetöltés, filterek, chart orchestration
-src/components/       UI (Hero, filterek, Stats, chartok, …)
-src/hooks/            useTheme, useChartColors
-src/lib/              Domain logika (aggregate, aqi, urlState, types, …)
+src/hooks/            useDashboardState, useTheme, useChartColors
+src/lib/              Domain logika (catalog, importSite, aggregate, aqi, urlState, …)
 src/styles/           CSS modulok (tokens → layout → szekciók)
 src/test/             Teszt setup + fixture-ök
 public/               Statikus assetek (data, ikonok, manifest, SW, _headers)
-scripts/              Offline adatgenerálás (Python)
+scripts/              haz01 Python generátor + import-site CLI
 ```
 
 ### Szerver (`src/index.ts`)
@@ -69,20 +69,22 @@ scripts/              Offline adatgenerálás (Python)
 - `Bun.serve` route-ok:
   - `/manifest.webmanifest`, `/sw.js`, `/icons/:file`, favicon — `public/` PWA / statikus fájlok
   - `/data/:file` — fájl a `public/data/`-ból (path traversal védelem)
+  - `POST /api/sites` — csak `bun dev` (helyszín import); productionben 404
   - `/*` — SPA (`index.html` HTML bundler entry)
 - Dev: HMR + console; prod: statikus szerver ugyanazzal a kóddal, vagy Cloudflare Pages a `dist/`-ről
 - PWA: production buildben a `registerServiceWorker` regisztrálja a `/sw.js`-t; a SW app shellt cache-el, a `/data/` hálózat-először stratégiát használ
 
 ### Frontend adatfolyam
 
-1. `App` betölti a kiválasztott metrika `series-pm*.json` fájlját (`fetch`).
+1. `App` betölti a `/data/catalog.json` helyszínlistát, majd a kiválasztott helyszín `files[metrika]` JSON-ját (`fetch`).
 2. `lib/aggregate.ts` kliensoldalon számol summary-t (napi / órás / trend, WHO arányok).
-3. A nézetállapot (metrika, időszak, grain, simple/detailed, …) az URL search paramokban él (`lib/urlState.ts`) — megosztható linkek.
+3. A nézetállapot (helyszín `s`, metrika, időszak, grain, simple/detailed, …) az URL search paramokban él (`lib/urlState.ts`) — megosztható linkek.
 4. Részletes chartok (`DailyChart`, `HourlyChart`) `React.lazy` + `Suspense`.
 
 ### Domain fogalmak (`src/lib/types.ts`)
 
 - **MetricId**: `PM1` | `PM2.5` | `PM10`
+- **SiteInfo**: nagymarosi helyszín (`nagymaros-haz01`, …), `files` map a series URL-ekre
 - **SeriesEntry**: `[timestampMs, value]`
 - **TrendGrain** / **MaxWindow**: aggregálási felbontás a trend charton
 - **ParentPeriodKey**: negyedév / félév; **WithinMonthScope**: hónap / 1d / 7d / 14d / custom
@@ -117,7 +119,9 @@ React komponens / hook / state–effect változtatás után futtasd a React Doct
 
 ## Adatgenerálás
 
-Grafana CSV exportok a `public/data/`-ban → JSON series:
+Grafana CSV exportok a `public/data/`-ban → JSON series.
+
+**Ház 01** (beépített `series-pm*.json`):
 
 ```bash
 python3 scripts/generate_pm25_data.py
@@ -132,7 +136,17 @@ A script:
 - Kizárja a hiányos hónapokat (`EXCLUDE_MONTH_PREFIXES`, jelenleg `2026-08`)
 - Meta: szenzor SPS30, chip `esp8266-2702201`, mintavétel ~3 perc
 
-Új CSV után futtasd a scriptet, majd ellenőrizd a UI-t `bun dev`-vel.
+A `public/data/catalog.json` a `nagymaros-haz01` sort ezekre a fájlokra mutatja.
+
+**További helyszín** (TypeScript parser, nincs hónapszűrés):
+
+```bash
+bun run import-site -- --id nagymaros-iskola01 --label "Iskola 01" pm25.csv pm10.csv
+```
+
+Lapos kimenet: `public/data/nagymaros-iskola01-pm25.json` + katalógus-frissítés. Ugyanarra a slugra futtatva felülír. Helyi űrlap: `bun dev` → `/feltoltes` (productionben nincs). Ellenőrizd `bun dev`-vel, commitold a `public/data/`-t, majd `bun run deploy`.
+
+Új ház-CSV után futtasd a Python scriptet, majd ellenőrizd a UI-t `bun dev`-vel.
 
 ## Build & deploy
 
@@ -156,5 +170,6 @@ A production Pages deploy **statikus**: a Bun szerver csak lokális / saját hos
 | `.oxlintrc.json` | Lint szabályok |
 | `src/lib/aggregate.ts` | Aggregálás, időszakok, grain javaslat |
 | `src/lib/urlState.ts` | URL ↔ nézetállapot |
+| `src/lib/catalog.ts` | Helyszínkatalógus |
 | `src/lib/aqi.ts` | WHO, tone, metrika slug / URL |
 | `scripts/generate_pm25_data.py` | CSV → JSON pipeline |

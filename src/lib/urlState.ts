@@ -23,6 +23,7 @@ import {
   metricSlug,
   parseMetricSlug,
 } from "./aqi";
+import { DEFAULT_SITE_ID, isSiteId } from "./catalog";
 import type {
   DatasetMeta,
   MaxWindow,
@@ -31,12 +32,14 @@ import type {
   MonthSelection,
   ParentPeriodKey,
   PeriodRange,
+  SiteId,
   TrendGrain,
   ViewMode,
   WithinMonthScope,
 } from "./types";
 
 export type ViewState = {
+  siteId: SiteId;
   metric: MetricId;
   viewMode: ViewMode;
   parentKey: ParentPeriodKey;
@@ -149,6 +152,7 @@ export function buildDefaultViewState(meta: DatasetMeta): ViewState {
     extended,
   });
   return {
+    siteId: DEFAULT_SITE_ID,
     metric: DEFAULT_METRIC,
     viewMode: "simple",
     parentKey,
@@ -178,12 +182,21 @@ export function parseViewState(
   search: string,
   meta: DatasetMeta,
   defaults: ViewState = buildDefaultViewState(meta),
+  validSiteIds?: readonly string[],
 ): ViewState {
   const params = new URLSearchParams(
     search.startsWith("?") ? search.slice(1) : search,
   );
   const parents = listParentPresets(meta.fromMs, meta.toMs);
   const parentIds = new Set(parents.map((p) => p.id));
+
+  const requestedSite = params.get("s");
+  const siteId =
+    requestedSite &&
+    isSiteId(requestedSite) &&
+    (!validSiteIds || validSiteIds.includes(requestedSite))
+      ? requestedSite
+      : defaults.siteId;
 
   const metric = parseMetricSlug(params.get("metric")) ?? defaults.metric;
   const requestedViewMode = params.get("view");
@@ -296,6 +309,7 @@ export function parseViewState(
   );
 
   return {
+    siteId,
     metric,
     viewMode,
     parentKey,
@@ -322,6 +336,9 @@ export function buildSearchParams(
 ): URLSearchParams {
   const params = new URLSearchParams();
 
+  if (state.siteId !== defaults.siteId) {
+    params.set("s", state.siteId);
+  }
   if (state.metric !== defaults.metric) {
     params.set("metric", metricSlug(state.metric));
   }

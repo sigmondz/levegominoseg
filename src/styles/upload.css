@@ -1,0 +1,29 @@
+.upload-page {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding-bottom: var(--space-xl);
+}
+
+.upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md) clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.upload-form .site-select {
+  max-width: none;
+}
+
+.upload-message {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.upload-message.is-error {
+  color: var(--bad);
+}
+
+.upload-page a {
+  color: var(--accent);
+}

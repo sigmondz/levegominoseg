@@ -10,7 +10,7 @@ import { WorstDays } from "./components/WorstDays";
 import { useDashboardState } from "./hooks/useDashboardState";
 import { useTheme } from "./hooks/useTheme";
 import { formatDateTime, toDateInputValue } from "./lib/aggregate";
-import { csvPath } from "./lib/aqi";
+import { sourceCsvPath } from "./lib/catalog";
 
 const DailyChart = lazy(async () => {
   const mod = await import("./components/DailyChart");
@@ -41,7 +41,11 @@ export default function App() {
   const {
     series,
     data,
+    sites,
+    site,
+    siteId,
     metric,
+    availableMetrics,
     viewMode,
     parentKey,
     monthSelection,
@@ -56,6 +60,7 @@ export default function App() {
     availableMaxWindowOptions,
     filteredPoints,
     setMetric,
+    handleSiteChange,
     setSelectedDay,
     setWindowStart,
     setTrendGrain,
@@ -71,6 +76,7 @@ export default function App() {
 
   const dataFrom = toDateInputValue(series.meta.fromMs);
   const lastMeasurement = formatDateTime(series.meta.toMs).slice(0, 16);
+  const sourceCsv = sourceCsvPath(site, metric);
 
   return (
     <div className="app">
@@ -100,7 +106,14 @@ export default function App() {
           onCustomFromChange={handleCustomFromChange}
           onCustomToChange={handleCustomToChange}
         />
-        <MetricFilter metric={metric} onMetricChange={setMetric} />
+        <MetricFilter
+          sites={sites}
+          siteId={siteId}
+          onSiteChange={handleSiteChange}
+          metric={metric}
+          availableMetrics={availableMetrics}
+          onMetricChange={setMetric}
+        />
         {viewMode === "detailed" ? <PeriodLead data={data} /> : null}
       </div>
       {viewMode === "simple" ? (
@@ -166,7 +179,13 @@ export default function App() {
               Utolsó mérés: {lastMeasurement} · Nem élő adat
             </span>
             <span>
-              Forrás: Grafana CSV · <code>{csvPath(metric)}</code>
+              Forrás: Grafana CSV
+              {sourceCsv ? (
+                <>
+                  {" "}
+                  · <code>{sourceCsv}</code>
+                </>
+              ) : null}
             </span>
           </>
         )}
