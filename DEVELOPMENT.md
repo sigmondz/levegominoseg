@@ -6,7 +6,7 @@ Fejlesztői dokumentáció a **Levegő** (levegőminőség-megjelenítő) projek
 
 | Réteg | Technológia | Megjegyzés |
 | --- | --- | --- |
-| Runtime / PM / bundler / dev server | **Bun** (≥1.3) | `bun install`, `Bun.serve`, `bun build`, `bun test` |
+| Runtime / PM / bundler / dev server | **Bun** (≥1.4.2) | `bun install`, `Bun.serve`, `bun build`, `bun test` |
 | UI | **React 19** + **TypeScript** (strict) | `react-jsx`, path alias `@/*` → `src/*` |
 | Chartok | **Recharts 3** | Lazy-loaded részletes chartok |
 | Styling | Plain CSS + CSS változók | Nincs Tailwind / CSS-in-JS |
@@ -21,7 +21,7 @@ Nincs Next.js, Vite, Node.js szerver, adatbázis vagy backend API — a frontend
 
 ## Előfeltételek
 
-- [Bun](https://bun.sh) (a repo `bun.lock` alapján: ~1.3.x)
+- [Bun](https://bun.sh) 1.4.2 (a repo `@types/bun` verziója ehhez igazodik)
 - Python 3 — csak ha új Grafana CSV-ből kell regenerálni a series fájlokat
 
 ```bash
